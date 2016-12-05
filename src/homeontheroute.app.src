@@ -1,0 +1,21 @@
+{application, homeontheroute,
+  [{description, "Home On The Route, the API for homeontheroute.com"},
+    {vsn, "0.0.1"},
+    {registered, []},
+    {mod, {homeontheroute_app, []}},
+    {applications,
+      [kernel,
+        stdlib,
+        cowboy
+      ]},
+    {env, []},
+    {modules, [
+      hello_handler,
+      visitor_counter,
+      homeontheroute_sup
+    ]},
+
+    {maintainers, []},
+    {licenses, []},
+    {links, []}
+  ]}.
