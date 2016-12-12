@@ -16,6 +16,20 @@ Architecture
                                 v
                              [Cowboy]
 
+Add GTFS data
+-------------
+
+This application GTFS data.  (Tested only with King County Metro's datasets.)
+Because GTFS data is large, I don't include it in the source repository, so download it yourself and add it to `./priv`.
+Download it, unzip it, and update `transit_server` to point to the right directory.
+
+Here's the intended directory structure:
+
+    ebin/...
+    priv/metro-gtfs-2016-11-09/stops.txt
+    priv/metro-gtfs-2016-11-09/...
+    src/...
+
 Build
 -----
 
