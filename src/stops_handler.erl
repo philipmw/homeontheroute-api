@@ -1,4 +1,4 @@
--module(hello_handler).
+-module(stops_handler).
 
 -behaviour(cowboy_http_handler).
 
@@ -8,11 +8,11 @@ init(_Type, Req, _Opts) ->
   {ok, Req, nostate}.
 
 handle(Req, _State) ->
-  {visitors, VisitorCounter} = gen_server:call(visitor_counter, newvisitor),
+  ok = gen_server:cast(visitor_counter, newvisitor),
+  {stops, Stops} = gen_server:call(transit_server, stops),
   {ok, Req2} = cowboy_req:reply(200,
-    [{<<"content-type">>, <<"text/plain">>}],
-    [<<"Hello from Erlang!  You are visitor # ">>,
-      integer_to_binary(VisitorCounter), $., $\n],
+    [{<<"content-type">>, <<"application/json">>}],
+      jiffy:encode(Stops),
     Req),
   {ok, Req2, _State}.
 

@@ -3,6 +3,19 @@ homeontheroute
 
 An OTP application providing a public HTTP API that powers [Home On The Route](http://homeontheroute.com), a web app helping you find the perfect neighborhood for your car-free lifestyle.
 
+Architecture
+------------
+
+                    [Application supervisor]
+                                |
+               /                |               \
+              v                 v                v
+    [Visitor counter]      [Webserver]      [Transit Server]
+                                |
+                                |
+                                v
+                             [Cowboy]
+
 Build
 -----
 
