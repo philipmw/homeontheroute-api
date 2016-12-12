@@ -10,13 +10,14 @@ start() ->
   io:fwrite("Starting Transit Server~n"),
   gen_server:start_link({local, transit_server},
     transit_server,
-    ["./priv/metro-gtfs-2016-11-09"], % args
+    ["metro-gtfs-2016-11-09"], % args
     []). % opts
 
 init(GtfsBasedir) ->
-  {ok, Cwd} = file:get_cwd(),
-  io:fwrite("CWD: ~s~n", [Cwd]),
-  {ok, StopsDataBinary} = file:read_file(GtfsBasedir ++ "/stops.txt"),
+  {ok, AppName} = application:get_application(),
+  StopsFilename = code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt",
+  io:fwrite("Loading stops from ~s~n", [StopsFilename]),
+  {ok, StopsDataBinary} = file:read_file(StopsFilename),
   StopsDataBinaryList = binary:split(StopsDataBinary, <<$\n>>, [global]),
   Stops = [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)],
   {ok, #transitdata{stops=Stops}}.

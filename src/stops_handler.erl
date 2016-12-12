@@ -12,7 +12,7 @@ handle(Req, _State) ->
   {stops, Stops} = gen_server:call(transit_server, stops),
   {ok, Req2} = cowboy_req:reply(200,
     [{<<"content-type">>, <<"application/json">>}],
-      jiffy:encode(Stops),
+      jsone:encode(Stops),
     Req),
   {ok, Req2, _State}.
 

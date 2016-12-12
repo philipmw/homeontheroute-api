@@ -59,6 +59,7 @@ General OS setup, as root:
     emerge --oneshot portage
     emerge -v tmux vim
     emerge -upDv --newuse world
+    rm /etc/localtime && ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
 Project-specific setup, as root:
 
@@ -70,4 +71,7 @@ Project-specific setup, as root:
 As `hotr`:
 
     pip install --user awscli
-    echo 'PATH=$PATH:$HOME/.local/bin' > ~/.bashrc
+    echo 'PATH=$PATH:$HOME/.local/bin' > ~/.bash_profile
+    
+    # set AWS credentials
+    aws s3 cp s3://homeontheroute-api-releases/prod-0.0.1.tar.gz .
