@@ -11,7 +11,10 @@ handle(Req, _State) ->
   ok = gen_server:cast(visitor_counter, newvisitor),
   {stops, Stops} = gen_server:call(transit_server, stops),
   {ok, Req2} = cowboy_req:reply(200,
-    [{<<"content-type">>, <<"application/json">>}],
+    [
+      {<<"Content-Type">>, <<"application/json">>},
+      {<<"Access-Control-Allow-Origin">>, <<"http://homeontheroute.com">>}
+    ],
       jsone:encode(Stops),
     Req),
   {ok, Req2, _State}.

@@ -1,10 +1,12 @@
 -module(transit_server).
 -behavior(gen_server).
 
--export([start/0, init/1, handle_call/3, terminate/2]).
+-export([start/0, init/1, handle_call/3, terminate/2,
+  % for unit tests only
+  stop_to_ejson/1]).
 
--record(transitdata, {stops}).
--record(stop, {id, name, lat, lon}).
+-include("./records/stop.hrl").
+-include("./records/transitdata.hrl").
 
 start() ->
   io:fwrite("Starting Transit Server~n"),
@@ -14,8 +16,12 @@ start() ->
     []). % opts
 
 init(GtfsBasedir) ->
-  {ok, AppName} = application:get_application(),
-  StopsFilename = code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt",
+  StopsFilename = case application:get_application() of
+                    {ok, AppName} ->
+                      code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt";
+                    _ ->
+                      "./priv/" ++ GtfsBasedir ++ "/stops.txt"
+                  end,
   io:fwrite("Loading stops from ~s~n", [StopsFilename]),
   {ok, StopsDataBinary} = file:read_file(StopsFilename),
   StopsDataBinaryList = binary:split(StopsDataBinary, <<$\n>>, [global]),
@@ -41,10 +47,10 @@ fileline_to_stop(BinaryLine) ->
 
 stop_to_ejson(StopRec) ->
   [
-    {[{id, StopRec#stop.id}]},
-    {[{name, StopRec#stop.name}]},
-    {[{lat, StopRec#stop.lat}]},
-    {[{lon, StopRec#stop.lon}]}
+    {id, StopRec#stop.id},
+    {name, StopRec#stop.name},
+    {lat, StopRec#stop.lat},
+    {lon, StopRec#stop.lon}
   ].
 
 handle_call(stops, _From, TransitData) ->
