@@ -9,7 +9,7 @@
 
 create_stops_ets() ->
   io:fwrite("Creating Stops Table~n"),
-  StopsTableId = ets:new(transit_stops, [set, named_table, {keypos,2}]),
+  StopsTableId = ets:new(transit_stops, [set, named_table, {keypos, #stop.id}]),
   Stops = load_stops_from_file("metro-gtfs-2016-11-09"),
   ok = insert_stops_to_table(Stops, StopsTableId),
   io:fwrite("Ok, loaded ~B stops into ETS~n", [lists:flatlength(Stops)]).
