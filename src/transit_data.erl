@@ -1,21 +1,20 @@
--module(transit_server).
--behavior(gen_server).
+-module(transit_data).
 
--export([start/0, init/1, handle_call/3, terminate/2,
-  % for unit tests only
+-export([create_stops_ets/0,
+  load_stops_from_file/1,
+  insert_stops_to_table/2,
   stop_to_ejson/1]).
 
 -include("./records/stop.hrl").
--include("./records/transitdata.hrl").
 
-start() ->
-  io:fwrite("Starting Transit Server~n"),
-  gen_server:start_link({local, transit_server},
-    transit_server,
-    ["metro-gtfs-2016-11-09"], % args
-    []). % opts
+create_stops_ets() ->
+  io:fwrite("Creating Stops Table~n"),
+  StopsTableId = ets:new(transit_stops, [set, named_table, {keypos,2}]),
+  Stops = load_stops_from_file("metro-gtfs-2016-11-09"),
+  ok = insert_stops_to_table(Stops, StopsTableId),
+  io:fwrite("Ok, loaded ~B stops into ETS~n", [lists:flatlength(Stops)]).
 
-init(GtfsBasedir) ->
+load_stops_from_file(GtfsBasedir) ->
   StopsFilename = case application:get_application() of
                     {ok, AppName} ->
                       code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt";
@@ -25,8 +24,12 @@ init(GtfsBasedir) ->
   io:fwrite("Loading stops from ~s~n", [StopsFilename]),
   {ok, StopsDataBinary} = file:read_file(StopsFilename),
   StopsDataBinaryList = binary:split(StopsDataBinary, <<$\n>>, [global]),
-  Stops = [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)],
-  {ok, #transitdata{stops=Stops}}.
+  [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)].
+
+insert_stops_to_table([Stop|StopRest], StopsTableId) ->
+  true = ets:insert(StopsTableId, Stop),
+  insert_stops_to_table(StopRest, StopsTableId);
+insert_stops_to_table([], _StopsTableId) -> ok.
 
 select_stop_lines(StopsDataBinaryList) ->
   % skip the header
@@ -52,13 +55,3 @@ stop_to_ejson(StopRec) ->
     {lat, StopRec#stop.lat},
     {lon, StopRec#stop.lon}
   ].
-
-handle_call(stops, _From, TransitData) ->
-  {reply, {
-    stops,
-    [stop_to_ejson(S) || S <- TransitData#transitdata.stops]
-  }, TransitData}.
-
-terminate(_Reason, _LoopData) ->
-  io:fwrite("Stopping Transit Server~n"),
-  ok.

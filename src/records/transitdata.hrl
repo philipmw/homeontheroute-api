@@ -1,1 +1,0 @@
--record(transitdata, {stops}).

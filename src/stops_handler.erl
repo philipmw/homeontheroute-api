@@ -7,9 +7,10 @@
 init(_Type, Req, _Opts) ->
   {ok, Req, nostate}.
 
+
 handle(Req, _State) ->
   ok = gen_server:cast(visitor_counter, newvisitor),
-  {stops, Stops} = gen_server:call(transit_server, stops),
+  Stops = ets:foldl(fun (E, A) -> A ++ [transit_data:stop_to_ejson(E)] end, [], transit_stops),
   {ok, Req2} = cowboy_req:reply(200,
     [
       {<<"Content-Type">>, <<"application/json">>},

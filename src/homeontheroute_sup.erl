@@ -46,14 +46,7 @@ init([]) ->
           restart => permanent,
           shutdown => 1000,
           type => worker,
-          modules => [visitor_counter_server] },
-
-        #{ id => transit_server,
-          start => {transit_server, start, []},
-          restart => permanent,
-          shutdown => 1000,
-          type => worker,
-          modules => [transit_server] }
+          modules => [visitor_counter_server] }
       ]
     }
   }.
