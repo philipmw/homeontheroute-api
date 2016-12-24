@@ -2,9 +2,9 @@
 
 -export([create_stops_ets/0,
   load_stops_from_file/1,
-  insert_stops_to_table/2,
-  stop_to_ejson/1]).
+  insert_stops_to_table/2]).
 
+-include_lib("eunit/include/eunit.hrl").
 -include("./records/stop.hrl").
 
 -define(GTFS_BASEDIR, "metro-gtfs-2016-11-09").
@@ -28,6 +28,15 @@ load_stops_from_file(GtfsBasedir) ->
   StopsDataBinaryList = binary:split(StopsDataBinary, <<$\n>>, [global]),
   [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)].
 
+load_stops_from_file_test() ->
+  Stops = transit_data:load_stops_from_file("metro-gtfs-2016-11-09"),
+  [Stop|_] = Stops,
+  ?assertEqual(Stop, #stop{
+    id = <<"1000">>,
+    name = <<"Pine St & 9th Ave">>,
+    lat = 47.6134148,
+    lon = -122.332138}).
+
 insert_stops_to_table([Stop|StopRest], StopsTableId) ->
   true = ets:insert(StopsTableId, Stop),
   insert_stops_to_table(StopRest, StopsTableId);
@@ -49,11 +58,3 @@ fileline_to_stop(BinaryLine) ->
     lat=binary_to_float(lists:nth(5, Fields)),
     lon=binary_to_float(lists:nth(6, Fields))
   }.
-
-stop_to_ejson(StopRec) ->
-  [
-    {id, StopRec#stop.id},
-    {name, StopRec#stop.name},
-    {lat, StopRec#stop.lat},
-    {lon, StopRec#stop.lon}
-  ].
