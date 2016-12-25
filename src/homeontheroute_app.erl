@@ -15,7 +15,7 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
-  transit_data:create_stops_ets(),
+  transit_data:create_all_ets(),
   homeontheroute_sup:start_link().
 
 %%--------------------------------------------------------------------

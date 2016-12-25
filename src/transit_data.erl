@@ -1,13 +1,14 @@
 -module(transit_data).
 
--export([create_stops_ets/0,
-  load_stops_from_file/1,
-  insert_stops_to_table/2]).
+-export([create_all_ets/0]).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("./records/stop.hrl").
 
 -define(GTFS_BASEDIR, "metro-gtfs-2016-11-09").
+
+create_all_ets() ->
+  create_stops_ets().
 
 create_stops_ets() ->
   io:fwrite("Creating Stops Table~n"),
@@ -29,7 +30,7 @@ load_stops_from_file(GtfsBasedir) ->
   [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)].
 
 load_stops_from_file_test() ->
-  Stops = transit_data:load_stops_from_file("metro-gtfs-2016-11-09"),
+  Stops = load_stops_from_file("metro-gtfs-2016-11-09"),
   [Stop|_] = Stops,
   ?assertEqual(Stop, #stop{
     id = <<"1000">>,
