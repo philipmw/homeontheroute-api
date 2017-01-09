@@ -59,3 +59,129 @@ fileline_to_stop(BinaryLine) ->
     lat=binary_to_float(lists:nth(5, Fields)),
     lon=binary_to_float(lists:nth(6, Fields))
   }.
+
+ets_map(Tab, Fun) ->
+  ets_map(Tab, Fun, [], ets:first(Tab)).
+ets_map(_Tab, _Fun, Mapped, '$end_of_table') -> Mapped;
+ets_map(Tab, Fun, Mapped, Key) ->
+  ets_map(Tab, Fun, Mapped, Key, ets:lookup(Tab, Key)).
+ets_map(Tab, Fun, Mapped, Key, [Value]) ->
+  NewMapped = [Fun(Value) | Mapped],
+  ets_map(Tab, Fun, NewMapped, ets:next(Tab, Key)).
+
+transit_data_test_ets_map(Tab) ->
+  Mapped = ets_map(Tab, fun(_X) -> 1 end),
+  ?assertEqual(3, lists:sum(Mapped)).
+
+stops_map(Fun) -> ets_map(transit_stops, Fun).
+
+stops_walkable_from(_Stop) -> []. %FIXME
+
+transit_modes_between(_StopA, _StopB) -> [walk].
+
+% At stop S, the cost of switching from transit mode A to B, expressed in minutes.
+mins_of_mode_switch(_S, M, M) -> 0;
+mins_of_mode_switch(_S, _M, walk) -> 0; % get off the bus and walk
+mins_of_mode_switch(_S, walk, _RouteId) -> 5. % get on the bus X (FIXME: Look up in ETS!)
+
+total_mins([]) -> 0;
+total_mins([{ModeSwitchMins, _TM, TransitMins, _StopB} | SegRest]) ->
+  ModeSwitchMins + TransitMins + total_mins(SegRest). %FIXME: make tail-recursive
+
+total_mins_test() ->
+  Mins = total_mins([
+    {0, walk, 5, stopA},
+    {5, route5, 3, stopB}
+  ]),
+  ?assertEqual(13, Mins).
+
+min_by(List, Fun) ->
+  [Head|_Rest] = List,
+  lists:foldl(
+    fun(X, MinElem) -> min_by(MinElem, X, Fun) end,
+    Head,
+    List).
+
+min_by(X, Y, Fun) ->
+  case Fun(X) >= Fun(Y) of
+    true -> X;
+    _ -> Y
+  end.
+
+min_by_test() ->
+  MinElem = min_by([1, 2, 3, 2, 1], fun(X) -> X*2 end),
+  ?assertEqual(3, MinElem).
+
+direct_walk_mins(_StopA, _StopB) -> 5. % FIXME
+
+% Find route between Stop A and Stop Z, when you arrived at Stop A
+% using a specific mode of transit.
+% Transit Modes: walk | RouteId
+% Supposing input: TransitModeToA=Route 40, StopA=40040, StopZ=40044
+% Output: a list of transit segments
+% [
+%   {<mode-switch-mins>, <transit-mode>, <transit-time>, <to-stop-X>},
+%   ...
+%   {<mode-switch-mins>, <transit-mode>, <transit-time>, <to-stop-40044>}
+% ]
+% Example output:
+% [
+%   {3 min, Route 40, 2 min, Stop40041}
+%   {0 min, Route 40, 2 min, Stop40042}
+%   {0 min, Route 40, 4 min, Stop40043}
+%   {5 min, Route 28, 3 min, Stop40044}
+% ]
+optimal_route(_TransitModeToA, Stop, Stop) -> [];
+optimal_route(TransitModeToA, StopA, StopZ) ->
+  % [
+  %   [{<mode-switch-mins>, <transit-mode>, <transit-time>, <to-stop-X>}, [...optimal-route-from-X]]
+  %   [{3 min, Route 40, 2 min, Stop40040}, [...optimal route from Stop40040]],
+  %   [{5 min, Route 28, 3 min, Stop28028}, [...optimal route from Stop28028]],
+  % ]
+  PossibleRoutesThroughStopB =
+    [[{mins_of_mode_switch(StopA, TransitModeToA, ModeAB),
+       ModeAB,
+       TimeAB,
+       StopB}|
+      optimal_route(ModeAB, StopB, StopZ)] ||
+        StopB <- stops_walkable_from(StopA),
+        {ModeAB, TimeAB} <- transit_modes_between(StopA, StopB)],
+
+  % Direct walking (as the crow flies) is an option too...
+  AllPossibleRoutes = [
+    [{0, walk, direct_walk_mins(StopA, StopZ), StopZ}] |
+    PossibleRoutesThroughStopB
+  ],
+  min_by(AllPossibleRoutes, fun total_mins/1).
+
+optimal_route_test() ->
+  ?assertEqual(
+    [
+      {0, walk, 5, stopB},
+      {0, walk, 5, stopC}
+    ],
+    optimal_route(walk, stopA, stopC)
+  ).
+
+%%%%%%%%%
+% TESTING
+
+transit_data_test_() ->
+  {
+    setup,
+    fun setup_transit_data/0,
+    fun teardown_transit_data/1,
+    {with, [
+      fun transit_data_test_ets_map/1
+    ]}
+  }.
+
+setup_transit_data() ->
+  StopsTableId = ets:new(transit_data_unittests, [set, {keypos, #stop.id}]),
+  ets:insert(StopsTableId, #stop{id=stopA, name = <<"Stop A">>, lat=0, lon=0}),
+  ets:insert(StopsTableId, #stop{id=stopB, name = <<"Stop B">>, lat=0, lon=1}),
+  ets:insert(StopsTableId, #stop{id=stopC, name = <<"Stop C">>, lat=1, lon=1}),
+  StopsTableId.
+
+teardown_transit_data(Tab) ->
+  ets:delete(Tab).
