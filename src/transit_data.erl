@@ -79,7 +79,7 @@ ets_map(Tab, Fun, Mapped, Key, [Value]) ->
 transit_data_test_ets_map(Tabs) ->
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   Mapped = ets_map(StopsTab, fun(_X) -> 1 end),
-  ?assertEqual(4, lists:sum(Mapped)).
+  ?assertEqual(5, lists:sum(Mapped)).
 
 % Fetch a stop by stop ID.  This assumes that the ETS table is a set!
 stop(StopsTab, StopId) ->
@@ -101,7 +101,7 @@ stops_walkable_from(StopsTab, FromStopId) ->
 transit_data_test_stops_walkable_from(Tabs) ->
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   ?assertEqual(
-    [{?TEST_STOP_B, 1500}],
+    [{?TEST_STOP_B, 216.28796299803383}],
     stops_walkable_from(StopsTab, stopA)
   ).
 
@@ -118,9 +118,16 @@ transit_data_test_sconns_between(Tabs) ->
   ).
 
 % At stop S, the cost of switching from transit mode A to B, expressed in Wait minutes.
-mins_of_mode_switch(_S, T, T, _W) -> 0; % no switch
-mins_of_mode_switch(_S, _T, walk, _W) -> 0; % get off the bus and walk
-mins_of_mode_switch(_S, walk, _RouteId, W) -> W. % get on the bus X
+mins_of_mode_switch(_S, _ModeA, _ModeA, _W) -> 0; % no switch
+mins_of_mode_switch(_S, _ModeA, walk, _W) -> 0; % get off the bus and walk
+mins_of_mode_switch(_S, walk, _ModeB, W) -> W; % get on the bus X
+mins_of_mode_switch(_S, _ModeA, _ModeB, W) -> W. % transfer to bus X
+
+mins_of_mode_switch_test() ->
+  ?assertEqual(
+    3,
+    mins_of_mode_switch(stopC, routeBC, routeCD, 3)
+  ).
 
 total_mins([]) -> 0;
 total_mins([{ModeSwitchMins, _TM, TransitMins, _StopB} | SegRest]) ->
@@ -153,6 +160,15 @@ min_by_test() ->
 % Find route between Stop A and Stop Z, when you arrived at Stop A
 % using a specific mode of transit.
 % Transit Modes: walk | RouteId
+%
+% Base case:
+%   We arrived at Stop Z.  (Stop A = StopZ)
+% Inductive cases:
+%   a) Find a <<stops connection>> from Stop A to Stop B, then
+%      solve the sub-problem of Optimal Route from B to Z.
+%   b) Walk from Stop A to some Stop B within walking distance of A,
+%      then solve the sub-problem of Optimal Route from B to Z.
+%
 % Supposing input: TransitModeToA=Route 40, StopA=40040, StopZ=40044
 % Output: a list of transit segments
 % [
@@ -169,30 +185,45 @@ min_by_test() ->
 % ]
 optimal_route(_Tabs, _TransitModeToA, StopId, StopId) -> [];
 optimal_route(Tabs, TransitModeToA, StopAId, StopZId) ->
+  io:fwrite("optimal_route(~w, ~w, ~w, ~w)~n", [Tabs, TransitModeToA, StopAId, StopZId]),
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
 
+  % We are assembling this list:
   % [
   %   [{<mode-switch-mins>, <transit-mode>, <transit-time>, <to-stop-X>}, [...optimal-route-from-X]]
   %   [{3 min, Route 40, 2 min, Stop40040}, [...optimal route from Stop40040]],
   %   [{5 min, Route 28, 3 min, Stop28028}, [...optimal route from Stop28028]],
   % ]
-  PossibleRoutesThroughStopB =
-    [[{mins_of_mode_switch(StopAId, TransitModeToA, ModeAB, WaitMins),
-       ModeAB,
-       WaitMins + TravelMins,
-       StopBId}|
-      optimal_route(StopsTab, ModeAB, StopBId, StopZId)] ||
-        StopBId <- stops_walkable_from(StopsTab, StopAId),
-        {ModeAB, WaitMins, TravelMins} <- sconns_between(SConnsTab, StopAId, StopBId)],
+
+  RoutesRidingThruStopB = [
+    [{mins_of_mode_switch(StopAId, TransitModeToA, SConn#sconn.transit_mode, SConn#sconn.wait_mins),
+      SConn#sconn.transit_mode,
+      SConn#sconn.wait_mins + SConn#sconn.travel_mins,
+      SConn#sconn.to_stop_id} |
+      optimal_route(Tabs, SConn#sconn.transit_mode, SConn#sconn.to_stop_id, StopZId)] ||
+    SConn <- ets:lookup(SConnsTab, StopAId)
+  ],
+  io:fwrite("RoutesRidingThruStopB: ~w~n", [RoutesRidingThruStopB]),
+
+  RoutesWalkingToB = [
+    [{mins_of_mode_switch(StopAId, TransitModeToA, walk, 0),
+      walk,
+      DistanceAB / ?WALK_METERS_PER_MIN, % travel mins
+      StopB#stop.id} |
+      optimal_route(Tabs, walk, StopB#stop.id, StopZId)] ||
+    {StopB, DistanceAB} <- stops_walkable_from(StopsTab, StopAId)
+  ],
+  io:fwrite("RoutesWalkingToB: ~w~n", [RoutesWalkingToB]),
 
   % Direct walking (as the crow flies) is an option too...
   StopA = stop(StopsTab, StopAId),
   StopZ = stop(StopsTab, StopZId),
-  AllPossibleRoutes = [
-    [{0, walk, earth:direct_walk_mins(StopA, StopZ), StopZId}] |
-    PossibleRoutesThroughStopB
-  ],
+  AllPossibleRoutes =
+    RoutesRidingThruStopB ++
+    RoutesWalkingToB ++
+    [[{0, walk, earth:direct_walk_mins(StopA, StopZ), StopZId}]],
+  io:fwrite("AllPossibleRoutes: ~w~n", [AllPossibleRoutes]),
   min_by(AllPossibleRoutes, fun total_mins/1).
 
 transit_data_test_optimal_route(Tabs) ->
@@ -202,7 +233,7 @@ transit_data_test_optimal_route(Tabs) ->
       {0, route28, 4, stopC},
       {0, walk, 5, stopD}
     ],
-    optimal_route(Tabs, walk, stopA, stopD)
+    optimal_route(Tabs, walk, stopA, stopE)
   ).
 
 %%%%%%%%%
@@ -230,12 +261,15 @@ setup_transit_data() ->
   ets:insert(StopsTableId, ?TEST_STOP_B),
   ets:insert(StopsTableId, ?TEST_STOP_C),
   ets:insert(StopsTableId, ?TEST_STOP_D),
+  ets:insert(StopsTableId, ?TEST_STOP_E),
   io:fwrite("Inserted test stops data into ~w~n", [StopsTableId]),
 
   SConnsTableId = ets:new(transit_data_unit_sconns, [bag, {keypos, #sconn.from_stop_id}]),
   ets:insert(TablesTableId, {sconns, SConnsTableId}),
   ets:insert(SConnsTableId, ?TEST_SCONN_B_C),
   ets:insert(SConnsTableId, ?TEST_SCONN_B_D),
+  ets:insert(SConnsTableId, ?TEST_SCONN_C_D),
+  ets:insert(SConnsTableId, ?TEST_SCONN_D_E),
   io:fwrite("Inserted test stops connections data into ~w~n", [SConnsTableId]),
 
   TablesTableId.

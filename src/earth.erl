@@ -35,12 +35,12 @@ is_within(V, T, E) ->
   (V >= (T-E)) and (V =< (T+E)).
 
 meters_between_stops_test() ->
-  ?assert(is_within(meters_between_stops(?TEST_STOP_A, ?TEST_STOP_B), 9685, 1)).
+  ?assert(is_within(meters_between_stops(?TEST_STOP_B, ?TEST_STOP_C), 9685, 1)).
 
 direct_walk_mins(StopA, StopB) ->
   Meters = meters_between_stops(StopA, StopB),
   Meters / ?WALK_METERS_PER_MIN.
 
 direct_walk_mins_test() ->
-  ?assert(is_within(direct_walk_mins(?TEST_STOP_A, ?TEST_STOP_B), 115, 1)).
+  ?assert(is_within(direct_walk_mins(?TEST_STOP_B, ?TEST_STOP_C), 115, 1)).
 
