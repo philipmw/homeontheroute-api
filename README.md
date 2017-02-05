@@ -1,10 +1,8 @@
-homeontheroute
-=====
+# homeontheroute #
 
 An OTP application providing a public HTTP API that powers [Home On The Route](http://homeontheroute.com), a web app helping you find the perfect neighborhood for your car-free lifestyle.
 
-Architecture
-------------
+## Architecture
 
                     [Application supervisor]
                                 |
@@ -16,8 +14,7 @@ Architecture
                                 v
                              [Cowboy]
 
-Add GTFS data
--------------
+## Add GTFS data
 
 This application needs GTFS data.  (Tested only with King County Metro's datasets.)
 Because GTFS data is large, I don't include it in the source repository, so download it yourself and add it to `./priv`.
@@ -30,24 +27,33 @@ Here's the intended directory structure:
     priv/metro-gtfs-2016-11-09/...
     src/...
 
-Build
------
+## Data structures
+
+| ID   | Name                  | Latitude | Longitude |
+| ---: | :-------------------- | -------: | --------: |
+| 1000 | Pine St & 9th Ave     | 47.613   | -122.332  |
+| 3200 | E Union St & 20th Ave | 47.613   | -122.306  |
+[Stops (records/stops.hrl)]
+
+| From Stop Id | To Stop Id | Transit Mode | Wait Mins | Travel Mins |
+| -----------: | ---------: | :----------- | --------: | ----------: |
+| 1000         | 3200       | route 28     | 4         | 20          |
+[Direct connections between stops (records/sconn.hrl)]
+
+## Build
 
     $ rebar3 compile
 
-Test
-----
+## Test
 
     $ rebar3 eunit
 
-Deploy
-------
+## Deploy
 
     $ rebar3 release -n [dev|prod]
     $ rebar3 as prod tar -n [dev|prod]
     
-Server setup
-------------
+## Server setup
 
 I use a C1 instance from [Scaleway](http://www.scaleway.com) with the Gentoo image.  Log in as root with the pre-configured SSH key.
 
