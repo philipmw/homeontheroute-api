@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Home On The Route API
+
+Resources:
+
+  DeployUser:
+    Type: AWS::IAM::User
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AutoScalingFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+      Policies:
+        - PolicyDocument:
+            Version: 2008-10-17
+            Statement:
+              - Effect: Allow
+                Action: "ecr:GetAuthorizationToken"
+                Resource: "*"
+              - Effect: Allow
+                Resource:
+                  "Fn::Sub": "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${EcrRepo}"
+                Action: "ecr:*"
+          PolicyName: Access-ECR-Repo
+        - PolicyDocument:
+            Version: 2008-10-17
+            Statement:
+              # for `eb init` to work
+              - Effect: Allow
+                Action: "elasticbeanstalk:*"
+                Resource:
+                  "Fn::Sub": "arn:aws:elasticbeanstalk:${AWS::Region}::solutionstack/*"
+              # for `eb use <env>` to work
+              - Effect: Allow
+                Action: "elasticbeanstalk:*"
+                Resource: "*"
+          PolicyName: Let-EB-CLI-Work
+        - PolicyDocument:
+            Version: 2008-10-17
+            Statement:
+              - Effect: Allow
+                Action: "s3:*"
+                Resource: "arn:aws:s3:::elasticbeanstalk-*"
+          PolicyName: Allow-Upload-To-S3
+        - PolicyDocument:
+            Version: 2008-10-17
+            Statement:
+              - Effect: Allow
+                Action: "cloudformation:*"
+                Resource: "arn:aws:cloudformation:us-west-2:101804781795:stack/awseb-*"
+          PolicyName: Allow-Stack-Access
+
+  EcrRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: homeontheroute
+
+  EBInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2008-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+  EBServiceRole:
+    # This service role isn't doing anything unique, but EB was complaining that
+    # I didn't provide one in that region.
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2008-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: elasticbeanstalk.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                "sts:ExternalId": elasticbeanstalk
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth
+        - arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService
+
+  EBInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: EBInstanceRole
+
+  EBApp:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: "Home On The Route API"
+
+  EBEnv:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName:
+        Ref: EBApp
+      EnvironmentName: "HomeOnTheRoute-API"
+      OptionSettings:
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: t2.nano
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value:
+            Ref: EBInstanceProfile
+        - Namespace: aws:elasticbeanstalk:application
+          OptionName: Application Healthcheck URL
+          Value: /
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: SingleInstance
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value:
+            Ref: EBServiceRole
+        - Namespace: aws:elasticbeanstalk:healthreporting:system
+          OptionName: SystemType
+          Value: enhanced
+      SolutionStackName: '64bit Amazon Linux 2016.09 v2.5.0 running Docker 1.12.6'
+      Tier:
+        Name: WebServer
+        Type: Standard
+
+  DomainName:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      # Ideally we could make an ALIAS record to the EB environmennt.
+
+#      AliasTarget:
+#        DNSName:
+#          !GetAtt EBEnv.EndpointURL
+#        # http://docs.aws.amazon.com/general/latest/gr/rande.html#elasticbeanstalk_region
+#        HostedZoneId: Z38NKT9BP95V3O
+
+      # But I don't know how to get the EB env's hostname using CloudFormation.
+      # So point to the EIP instead.
+      HostedZoneName: homeontheroute.com.
+      Name: api.homeontheroute.com.
+      TTL: 1800
+      ResourceRecords:
+        - !GetAtt EBEnv.EndpointURL
+      Type: A

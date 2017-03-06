@@ -48,41 +48,41 @@ Here's the intended directory structure:
 
     $ rebar3 eunit
 
-## Deploy
+## Run locally
 
-    $ rebar3 release -n [dev|prod]
-    $ rebar3 as prod tar -n [dev|prod]
-    
-## Server setup
+    $ rebar3 shell
 
-I use a C1 instance from [Scaleway](http://www.scaleway.com) with the Gentoo image.  Log in as root with the pre-configured SSH key.
+And look for this output:
 
-First, edit `/etc/portage/make.conf` to have these lines:
+    =PROGRESS REPORT==== 3-Mar-2017::19:08:02 ===
+             application: homeontheroute
+              started_at: nonode@nohost
 
-    USE="<...any existing flags...> smp"
-    MAKEOPTS=-j5
-    PYTHON_TARGETS=python3_4
-    FEATURES=nostrip
+This is all you need for complete local development.
 
-General OS setup, as root:
+## Deploying to AWS
 
-    emerge --sync
-    emerge --oneshot portage
-    emerge -v tmux vim
-    emerge -upDv --newuse world
-    rm /etc/localtime && ln -s /usr/share/zoneinfo/UTC /etc/localtime
+### Install tools
 
-Project-specific setup, as root:
+    $ brew install awscli
+    $ brew install awsebcli
 
-    echo "dev-lang/erlang ~arm" >> /etc/portage/package.accept_keywords
-    emerge -v dev-python/pip
-    useradd hotr
-    iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080
+### Package for deployment
 
-As `hotr`:
+    $ docker build -t homeontheroute .
 
-    pip install --user awscli
-    echo 'PATH=$PATH:$HOME/.local/bin' > ~/.bash_profile
-    
-    # set AWS credentials
-    aws s3 cp s3://homeontheroute-api-releases/prod-0.0.1.tar.gz .
+### Run Dockerized locally
+
+If you want to test it.  This should behave equivalently to the "Run locally" section.
+
+    $ docker run -p 8080:8080 homeontheroute
+
+## Push to AWS
+
+    # ... export AWS credentials ...
+    $ aws ecr get-login --region us-west-2
+    $ <line from above>
+    $ docker build -t homeontheroute .
+    $ docker tag homeontheroute:latest 101804781795.dkr.ecr.us-west-2.amazonaws.com/homeontheroute:latest
+    $ docker push 101804781795.dkr.ecr.us-west-2.amazonaws.com/homeontheroute:latest
+    $ eb deploy

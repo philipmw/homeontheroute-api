@@ -1,0 +1,14 @@
+branch-defaults:
+  master:
+    environment: HomeOnTheRoute-API
+global:
+  application_name: Home On The Route API
+  branch: null
+  default_ec2_keyname: null
+  default_platform: Docker 1.12.6
+  default_region: us-west-2
+  profile: null
+  repository: null
+  sc: git
+deploy:
+  artifact: aws/Dockerrun.aws.json
