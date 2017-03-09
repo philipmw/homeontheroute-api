@@ -126,6 +126,23 @@ Resources:
         - Namespace: aws:elasticbeanstalk:healthreporting:system
           OptionName: SystemType
           Value: enhanced
+        # http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/health-enhanced-cloudwatch.html
+        - Namespace: aws:elasticbeanstalk:healthreporting:system
+          OptionName: ConfigDocument
+          Value: |
+            {
+              "Version": 1,
+              "CloudWatchMetrics": {
+                "Environment": {
+                  "ApplicationRequests2xx": 60,
+                  "ApplicationRequests4xx": 60,
+                  "ApplicationRequests5xx": 60,
+                  "ApplicationRequestsTotal": 60,
+                  "ApplicationLatencyP50": 60,
+                  "ApplicationLatencyP99": 60,
+                }
+              }
+            }
       SolutionStackName: '64bit Amazon Linux 2016.09 v2.5.1 running Docker 1.12.6'
       Tier:
         Name: WebServer
