@@ -1,5 +1,3 @@
-# FROM amazonlinux:latest
-FROM alpine:latest
 FROM erlang:latest
 
 RUN mkdir /hotr
