@@ -143,6 +143,18 @@ Resources:
                 }
               }
             }
+        - Namespace: aws:elasticbeanstalk:managedactions
+          OptionName: ManagedActionsEnabled
+          Value: true
+        - Namespace: aws:elasticbeanstalk:managedactions
+          OptionName: PreferredStartTime
+          Value: "Wed:20:00"
+        - Namespace: aws:elasticbeanstalk:managedactions:platformupdate
+          OptionName: UpdateLevel
+          Value: minor
+        - Namespace: aws:elasticbeanstalk:managedactions:platformupdate
+          OptionName: InstanceRefreshEnabled
+          Value: true
       SolutionStackName: '64bit Amazon Linux 2016.09 v2.5.1 running Docker 1.12.6'
       Tier:
         Name: WebServer
