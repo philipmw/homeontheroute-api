@@ -10,8 +10,7 @@
 -include("earth.hrl").
 -include("records/stop.hrl").
 
--spec deg_to_rad(X) -> float() when
-  X :: float().
+-spec deg_to_rad(number()) -> float().
 deg_to_rad(D) ->
   D * math:pi() / 180.
 

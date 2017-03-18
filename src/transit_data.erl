@@ -81,20 +81,24 @@ transit_data_test_ets_map(Tabs) ->
   Mapped = ets_map(StopsTab, fun(_X) -> 1 end),
   ?assertEqual(5, lists:sum(Mapped)).
 
-% Fetch a stop by stop ID.  This assumes that the ETS table is a set!
-stop(StopsTab, StopId) ->
-  lists:nth(1, ets:lookup(StopsTab, StopId)).
+% Map stop IDs to stop records.  This assumes that the ETS table is a set!
+stop(StopsTab, StopIds) ->
+  lists:map(
+    fun(StopId) -> lists:nth(1, ets:lookup(StopsTab, StopId)) end,
+    StopIds
+  ).
 
-% All stops surrounding the input stop.  Excludes the input stop.
+% All stops surrounding the input stop, excluding the given set of stops.
 % Returns a list in the format:
 %   [ {StopAId, MetersDistance}, {StopBId, MetersDistance}, ... ]
-stops_walkable_from(StopsTab, FromStopId) ->
-  FromStop = stop(StopsTab, FromStopId),
+stops_walkable_from(StopsTab, FromStopId, StopIdsExcluded) ->
+  [FromStop] = stop(StopsTab, [FromStopId]),
   Distances = ets_map(StopsTab, fun(StopX) ->
     {StopX, earth:meters_between_stops(FromStop, StopX)} end),
   lists:filter(
     fun({StopX, MetersAway}) ->
-      (FromStopId =/= StopX#stop.id) and (MetersAway < ?MAX_WALK_MINS*?WALK_METERS_PER_MIN)
+      (not lists:member(StopX#stop.id, StopIdsExcluded)) and
+      (MetersAway < ?MAX_WALK_MINS*?WALK_METERS_PER_MIN)
     end,
     Distances).
 
@@ -102,10 +106,10 @@ transit_data_test_stops_walkable_from(Tabs) ->
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   ?assertEqual(
     [{?TEST_STOP_B, 216.28796299803383}],
-    stops_walkable_from(StopsTab, stopA)
+    stops_walkable_from(StopsTab, stopA, [stopA])
   ).
 
-% Returns [sconn].
+-spec sconns_between(ets:tid(), _, _) -> [sconn()].
 sconns_between(SConnsTab, StopAId, StopBId) ->
   SConnsFromA = ets:lookup(SConnsTab, StopAId),
   lists:filter(fun (Sconn) -> Sconn#sconn.to_stop_id == StopBId end, SConnsFromA).
@@ -129,9 +133,12 @@ mins_of_mode_switch_test() ->
     mins_of_mode_switch(stopC, routeBC, routeCD, 3)
   ).
 
-total_mins([]) -> 0;
-total_mins([{ModeSwitchMins, _TM, TransitMins, _StopB} | SegRest]) ->
-  ModeSwitchMins + TransitMins + total_mins(SegRest). %FIXME: make tail-recursive
+-spec total_mins([{number(), _, number(), _}]) -> number().
+total_mins(Routes) -> lists:foldl(
+  fun ({ModeSwitchMins, _TM, TransitMins, _StopB}, AccIn) -> ModeSwitchMins + TransitMins + AccIn end,
+  0,
+  Routes
+).
 
 total_mins_test() ->
   Mins = total_mins([
@@ -148,14 +155,34 @@ min_by(List, Fun) ->
     List).
 
 min_by(X, Y, Fun) ->
-  case Fun(X) >= Fun(Y) of
+  case Fun(X) =< Fun(Y) of
     true -> X;
     _ -> Y
   end.
 
 min_by_test() ->
-  MinElem = min_by([1, 2, 3, 2, 1], fun(X) -> X*2 end),
-  ?assertEqual(3, MinElem).
+  MinElem = min_by([3, 2, 1, 2, 3], fun(X) -> X*2 end),
+  ?assertEqual(1, MinElem).
+
+connections_from_stop(SConnsTab, StopAId, StopIdsToExclude) ->
+  AllSConns = ets:lookup(SConnsTab, StopAId),
+  lists:filter(
+    fun (SConn) -> not lists:member(SConn#sconn.to_stop_id, StopIdsToExclude) end,
+    AllSConns).
+
+transit_data_test_connections_from_stop_1(Tabs) ->
+  {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
+  ?assertEqual(
+    [?TEST_SCONN_B_C, ?TEST_SCONN_B_D],
+    connections_from_stop(SConnsTab, stopB, [])
+  ).
+
+transit_data_test_connections_from_stop_2(Tabs) ->
+  {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
+  ?assertEqual(
+    [?TEST_SCONN_B_D],
+    connections_from_stop(SConnsTab, stopB, [stopC])
+  ).
 
 % Find route between Stop A and Stop Z, when you arrived at Stop A
 % using a specific mode of transit.
@@ -183,9 +210,9 @@ min_by_test() ->
 %   {0 min, Route 40, 4 min, Stop40043}
 %   {5 min, Route 28, 3 min, Stop40044}
 % ]
-optimal_route(_Tabs, _TransitModeToA, StopId, StopId) -> [];
-optimal_route(Tabs, TransitModeToA, StopAId, StopZId) ->
-  io:fwrite("optimal_route(~w, ~w, ~w, ~w)~n", [Tabs, TransitModeToA, StopAId, StopZId]),
+optimal_route(_Tabs, _StopsVisited, _TransitModeToA, StopId, StopId) -> [];
+optimal_route(Tabs, StopsVisited, TransitModeToA, StopAId, StopZId) ->
+  io:fwrite("optimal_route(~w, ~w, ~w, ~w)~n", [StopsVisited, TransitModeToA, StopAId, StopZId]),
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
 
@@ -199,10 +226,10 @@ optimal_route(Tabs, TransitModeToA, StopAId, StopZId) ->
   RoutesRidingThruStopB = [
     [{mins_of_mode_switch(StopAId, TransitModeToA, SConn#sconn.transit_mode, SConn#sconn.wait_mins),
       SConn#sconn.transit_mode,
-      SConn#sconn.wait_mins + SConn#sconn.travel_mins,
+      SConn#sconn.travel_mins,
       SConn#sconn.to_stop_id} |
-      optimal_route(Tabs, SConn#sconn.transit_mode, SConn#sconn.to_stop_id, StopZId)] ||
-    SConn <- ets:lookup(SConnsTab, StopAId)
+      optimal_route(Tabs, [StopAId] ++ StopsVisited, SConn#sconn.transit_mode, SConn#sconn.to_stop_id, StopZId)] ||
+    SConn <- connections_from_stop(SConnsTab, StopAId, [StopAId] ++ StopsVisited)
   ],
   io:fwrite("RoutesRidingThruStopB: ~w~n", [RoutesRidingThruStopB]),
 
@@ -211,18 +238,19 @@ optimal_route(Tabs, TransitModeToA, StopAId, StopZId) ->
       walk,
       DistanceAB / ?WALK_METERS_PER_MIN, % travel mins
       StopB#stop.id} |
-      optimal_route(Tabs, walk, StopB#stop.id, StopZId)] ||
-    {StopB, DistanceAB} <- stops_walkable_from(StopsTab, StopAId)
+      optimal_route(Tabs, [StopAId] ++ StopsVisited, walk, StopB#stop.id, StopZId)] ||
+    {StopB, DistanceAB} <- stops_walkable_from(StopsTab, StopAId, [StopAId] ++ StopsVisited)
   ],
   io:fwrite("RoutesWalkingToB: ~w~n", [RoutesWalkingToB]),
 
   % Direct walking (as the crow flies) is an option too...
-  StopA = stop(StopsTab, StopAId),
-  StopZ = stop(StopsTab, StopZId),
+  [StopA, StopZ] = stop(StopsTab, [StopAId, StopZId]),
+  DirectRoute = [[{0, walk, earth:direct_walk_mins(StopA, StopZ), StopZId}]],
+
   AllPossibleRoutes =
     RoutesRidingThruStopB ++
     RoutesWalkingToB ++
-    [[{0, walk, earth:direct_walk_mins(StopA, StopZ), StopZId}]],
+    DirectRoute,
   io:fwrite("AllPossibleRoutes: ~w~n", [AllPossibleRoutes]),
   min_by(AllPossibleRoutes, fun total_mins/1).
 
@@ -230,10 +258,10 @@ transit_data_test_optimal_route(Tabs) ->
   ?assertEqual(
     [
       {0, walk, 5, stopB},
-      {0, route28, 4, stopC},
+      {2, routeBC, 30, stopC},
       {0, walk, 5, stopD}
     ],
-    optimal_route(Tabs, walk, stopA, stopE)
+    optimal_route(Tabs, [], walk, stopA, stopE)
   ).
 
 %%%%%%%%%
@@ -247,6 +275,8 @@ transit_data_test_() ->
     {with, [
       fun transit_data_test_ets_map/1,
       fun transit_data_test_sconns_between/1,
+      fun transit_data_test_connections_from_stop_1/1,
+      fun transit_data_test_connections_from_stop_2/1,
       fun transit_data_test_optimal_route/1,
       fun transit_data_test_stops_walkable_from/1
     ]}

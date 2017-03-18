@@ -9,4 +9,6 @@
   travel_mins
 }).
 
+-type sconn() :: #sconn{}.
+
 -endif.
