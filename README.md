@@ -48,6 +48,16 @@ Here's the intended directory structure:
 
     $ rebar3 eunit
 
+## Dialyze
+
+One-time:
+
+    $ dialyzer --build_plt --apps erts kernel stdlib eunit ./_build/default/lib
+
+As needed:
+
+    $ dialyzer --src src
+
 ## Run locally
 
     $ rebar3 shell
