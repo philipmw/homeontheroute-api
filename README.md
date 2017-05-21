@@ -2,6 +2,30 @@
 
 An OTP application providing a public HTTP API that powers [Home On The Route](http://homeontheroute.com), a web app helping you find the perfect neighborhood for your car-free lifestyle.
 
+## API
+
+### Get a list of all stops
+
+*`GET /stops`*
+
+Takes no query params.  Returns JSON: a list of transit stops.
+
+### Get transit score pins
+
+(_Not implemented yet._)
+
+*`GET /transitscore-pins`*
+
+Query params:
+
+* `userLocations[]`: a list of coordinates of the user's favorite locations
+* `radiusMeters`: radius, in meters, of each data bin.  This is intended to be synced with the `radius` parameter to `Microsoft.Maps.DataBinningLayer`.
+* `originCoords`: coordinates of the bounding box's (0, 0) point
+* `bbWidthMeters`: the bounding box's width, in meters
+* `bbHeightMeters`: the bounding box's height, in meters
+
+Returns [GeoJSON](http://geojson.org/) of pins, within the specified bounding box, spaced _<radius>_ meters apart, each having a `transit-score` metadata property.
+
 ## Architecture
 
                     [Application supervisor]
@@ -69,6 +93,12 @@ And look for this output:
               started_at: nonode@nohost
 
 This is all you need for complete local development.
+
+Now try http://localhost:8080/stops -- it should work!
+
+## Quit the shell
+
+    1> q().
 
 ## Deploying to AWS
 

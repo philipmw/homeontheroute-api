@@ -8,7 +8,8 @@ start() ->
   Dispatch = cowboy_router:compile([
     {'_', [
       {"/", hello_handler, []},
-      {"/stops", stops_handler, []}
+      {"/stops", stops_handler, []},
+      {"/transitscore-pins", transitscore_handler, []}
     ]}
   ]),
   io:fwrite("Starting webserver~n"),

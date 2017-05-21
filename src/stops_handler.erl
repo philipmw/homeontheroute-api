@@ -16,7 +16,7 @@ handle(Req, _State) ->
   {ok, Req2} = cowboy_req:reply(200,
     [
       {<<"Content-Type">>, <<"application/json">>},
-      {<<"Access-Control-Allow-Origin">>, <<"http://homeontheroute.com">>}
+      {<<"Access-Control-Allow-Origin">>, <<"*">>}
     ],
       jsone:encode(Stops),
     Req),
