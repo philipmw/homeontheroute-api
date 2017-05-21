@@ -113,6 +113,12 @@ Resources:
           OptionName: IamInstanceProfile
           Value:
             Ref: EBInstanceProfile
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: RootVolumeType
+          Value: standard
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: RootVolumeSize
+          Value: 8
         - Namespace: aws:elasticbeanstalk:application
           OptionName: Application Healthcheck URL
           Value: /
@@ -155,7 +161,7 @@ Resources:
         - Namespace: aws:elasticbeanstalk:managedactions:platformupdate
           OptionName: InstanceRefreshEnabled
           Value: true
-      SolutionStackName: '64bit Amazon Linux 2016.09 v2.5.1 running Docker 1.12.6'
+      SolutionStackName: '64bit Amazon Linux 2017.03 v2.6.0 running Docker 1.12.6'
       Tier:
         Name: WebServer
         Type: Standard
