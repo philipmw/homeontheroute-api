@@ -4,7 +4,7 @@ An OTP application providing a public HTTP API that powers [Home On The Route](h
 
 ## Build status
 
-* prod: [![CircleCI](https://circleci.com/gh/philipmw/homeontheroute.com/tree/master.svg?style=svg)](https://circleci.com/gh/philipmw/homeontheroute.com/tree/master)
+* prod: [![CircleCI](https://circleci.com/gh/philipmw/homeontheroute-api/tree/master.svg?style=svg)](https://circleci.com/gh/philipmw/homeontheroute-api/tree/master)
 
 ## API
 
