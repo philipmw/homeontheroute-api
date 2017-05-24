@@ -107,6 +107,16 @@ Now try http://localhost:8080/stops -- it should work!
     $ brew install awscli
     $ brew install awsebcli
 
+### First time
+
+This section is to be done just once in your AWS account.
+
+1. Update `./aws/stack.yml` to either use a custom domain name (since homeontheroute.com is taken!), or remove
+   the `DomainName` resource.
+2. Using either the AWS console or CLI, create a new CloudFormation Stack from `./aws/stack.yml`.
+
+This creates a stock Elastic Beanstalk environment, ready for you to deploy this app into it.
+
 ### Package for deployment
 
     $ docker build -t homeontheroute .
