@@ -1,0 +1,34 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: alpine:latest
+    working_directory: ~/homeontheroute-api
+    steps:
+      - run:
+          name: update package cache
+          command: apk --no-cache update
+      - run:
+          name: install Docker client
+          command: apk add --update docker
+      - run:
+          name: install AWS CLI and EB CLI
+          command: |
+            apk --no-cache add python py-pip && \
+            pip --no-cache-dir install awscli && \
+            pip --no-cache-dir install awsebcli
+      - checkout
+      - setup_remote_docker
+      - run:
+          command: docker build -t homeontheroute .
+      - run:
+          name: log into AWS ECR
+          command: eval $(aws ecr get-login --region us-west-2)
+      - run:
+          name: tag and push the new Docker image to ECR
+          command: |
+            docker tag homeontheroute:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/homeontheroute:latest
+            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/homeontheroute:latest
+      - run:
+          name: deploy latest Docker image to Elastic Beanstalk
+          command: eb deploy

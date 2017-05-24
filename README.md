@@ -2,6 +2,10 @@
 
 An OTP application providing a public HTTP API that powers [Home On The Route](http://homeontheroute.com), a web app helping you find the perfect neighborhood for your car-free lifestyle.
 
+## Build status
+
+* prod: [![CircleCI](https://circleci.com/gh/philipmw/homeontheroute.com/tree/master.svg?style=svg)](https://circleci.com/gh/philipmw/homeontheroute.com/tree/master)
+
 ## API
 
 ### Get a list of all stops
@@ -129,10 +133,11 @@ If you want to test it.  This should behave equivalently to the "Run locally" se
 
 ## Push to AWS
 
-    # ... export AWS credentials ...
-    $ aws ecr get-login --region us-west-2
-    $ <line from above>
-    $ docker build -t homeontheroute .
-    $ docker tag homeontheroute:latest 101804781795.dkr.ecr.us-west-2.amazonaws.com/homeontheroute:latest
-    $ docker push 101804781795.dkr.ecr.us-west-2.amazonaws.com/homeontheroute:latest
-    $ eb deploy
+Follow steps in `./.circleci/config.yml`.  This is what CircleCI does at each commit, so it's
+guaranteed to be accurate and up-to-date.
+
+If you are setting up your own CircleCI environment for this project, define these environment
+variables for the project:
+
+* AWS_ACCOUNT_ID
+* AWS_REGION
