@@ -48,7 +48,4 @@ jobs:
             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/homeontheroute:latest
       - run:
           name: deploy latest Docker image to Elastic Beanstalk
-          command: |
-            git status
-            eb status
-            eb deploy
+          command: eb deploy
