@@ -45,15 +45,9 @@ Returns [GeoJSON](http://geojson.org/) of pins, within the specified bounding bo
 ## Add GTFS data
 
 This application needs GTFS data.  (Tested only with King County Metro's datasets.)
-Because GTFS data is large, I don't include it in the source repository, so download it yourself and add it to `./priv`.
-Download it, unzip it, and update `transit_server` to point to the right directory.
-
-Here's the intended directory structure:
-
-    ebin/...
-    priv/metro-gtfs-2016-11-09/stops.txt
-    priv/metro-gtfs-2016-11-09/...
-    src/...
+Because GTFS data is large, I don't include it in the source repository, so download it yourself.
+The latest King County Metro GTFS dataset is downloaded as part of this project's continuous deployment,
+so refer to `./.circleci/config.yml` for the details.
 
 ## Data structures
 

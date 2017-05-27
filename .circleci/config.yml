@@ -18,6 +18,13 @@ jobs:
             pip --no-cache-dir install awscli && \
             pip --no-cache-dir install awsebcli
       - checkout
+      - run:
+          name: download latest King County Metro GTFS data
+          command: |
+            apk add --update curl
+            curl -o metro-gtfs.zip http://metro.kingcounty.gov/gtfs/google_transit.zip
+            mkdir -p priv/metro-gtfs
+            (cd priv/metro-gtfs && unzip ../../metro-gtfs.zip)
       - setup_remote_docker
       - run:
           command: docker build -t homeontheroute .

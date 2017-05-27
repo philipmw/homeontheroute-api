@@ -11,7 +11,7 @@
 % How much time is a typical person willing to spend walking?
 -define(MAX_WALK_MINS, 10).
 
--define(GTFS_BASEDIR, "metro-gtfs-2016-11-09").
+-define(GTFS_BASEDIR, "metro-gtfs").
 
 create_all_ets() ->
   create_stops_ets().
@@ -36,7 +36,7 @@ load_stops_from_file(GtfsBasedir) ->
   [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)].
 
 load_stops_from_file_test() ->
-  Stops = load_stops_from_file("metro-gtfs-2016-11-09"),
+  Stops = load_stops_from_file(?GTFS_BASEDIR),
   [Stop|_] = Stops,
   ?assertEqual(Stop, #stop{
     id = <<"1000">>,
