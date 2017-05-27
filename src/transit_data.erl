@@ -117,8 +117,8 @@ sconns_between(SConnsTab, StopAId, StopBId) ->
 transit_data_test_sconns_between(Tabs) ->
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
   ?assertEqual(
-    [?TEST_SCONN_B_C],
-    sconns_between(SConnsTab, stopB, stopC)
+    [?TEST_SCONN_RED_A_B],
+    sconns_between(SConnsTab, stopA, stopB)
   ).
 
 % At stop S, the cost of switching from transit mode A to B, expressed in Wait minutes.
@@ -173,15 +173,15 @@ connections_from_stop(SConnsTab, StopAId, StopIdsToExclude) ->
 transit_data_test_connections_from_stop_1(Tabs) ->
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
   ?assertEqual(
-    [?TEST_SCONN_B_C, ?TEST_SCONN_B_D],
+    [?TEST_SCONN_RED_B_C, ?TEST_SCONN_YELLOW_B_C],
     connections_from_stop(SConnsTab, stopB, [])
   ).
 
 transit_data_test_connections_from_stop_2(Tabs) ->
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
   ?assertEqual(
-    [?TEST_SCONN_B_D],
-    connections_from_stop(SConnsTab, stopB, [stopC])
+    [?TEST_SCONN_GREEN_C_E],
+    connections_from_stop(SConnsTab, stopC, [stopD])
   ).
 
 % Find route between Stop A and Stop Z, when you arrived at Stop A
@@ -255,12 +255,12 @@ optimal_route(Tabs, StopsVisited, TransitModeToA, StopAId, StopZId) ->
   min_by(AllPossibleRoutes, fun total_mins/1).
 
 transit_data_test_optimal_route(Tabs) ->
-  ?assertEqual(
+  ?assertMatch(
     [
-      {0, walk, 5, stopB},
-      {2, routeBC, 30, stopC},
-      {0, walk, 5, stopD}
-    ],
+      {0, walk, WalkTime, stopB},
+      {15, routeYellow, 5, stopC},
+      {5, routeGreen, 5, stopE}
+    ] when WalkTime > 2, % FIXME: https://stackoverflow.com/questions/44212785/multiple-clauses-in-eunits-assertmatch
     optimal_route(Tabs, [], walk, stopA, stopE)
   ).
 
@@ -296,10 +296,14 @@ setup_transit_data() ->
 
   SConnsTableId = ets:new(transit_data_unit_sconns, [bag, {keypos, #sconn.from_stop_id}]),
   ets:insert(TablesTableId, {sconns, SConnsTableId}),
-  ets:insert(SConnsTableId, ?TEST_SCONN_B_C),
-  ets:insert(SConnsTableId, ?TEST_SCONN_B_D),
-  ets:insert(SConnsTableId, ?TEST_SCONN_C_D),
-  ets:insert(SConnsTableId, ?TEST_SCONN_D_E),
+  ets:insert(SConnsTableId, ?TEST_SCONN_RED_A_B),
+  ets:insert(SConnsTableId, ?TEST_SCONN_RED_B_C),
+  ets:insert(SConnsTableId, ?TEST_SCONN_RED_C_D),
+  ets:insert(SConnsTableId, ?TEST_SCONN_RED_D_E),
+  ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_B_C),
+  ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_C_D),
+  ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_D_E),
+  ets:insert(SConnsTableId, ?TEST_SCONN_GREEN_C_E),
   io:fwrite("Inserted test stops connections data into ~w~n", [SConnsTableId]),
 
   TablesTableId.
