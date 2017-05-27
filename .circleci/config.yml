@@ -17,6 +17,16 @@ jobs:
             apk --no-cache add python py-pip && \
             pip --no-cache-dir install awscli && \
             pip --no-cache-dir install awsebcli
+      # Before `checkout`, fix this CircleCI warning:
+      #
+      #   Warning: Either git or ssh (required by git to clone through SSH) is not installed in the image.
+      #   Falling back to CircleCI's native git client but this is still an experiment feature.
+      #   We highly recommend using an image that has official git and ssh installed.
+      - run:
+          name: install Git and SSH
+          command: |
+            apk add --update git
+            apk add --update openssh-client
       - checkout
       - run:
           name: download latest King County Metro GTFS data
@@ -38,4 +48,7 @@ jobs:
             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/homeontheroute:latest
       - run:
           name: deploy latest Docker image to Elastic Beanstalk
-          command: eb deploy
+          command: |
+            git status
+            eb status
+            eb deploy
