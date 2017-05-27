@@ -5,8 +5,7 @@ COPY . /hotr
 RUN rm -rf /hotr/_build
 RUN rm -rf /hotr/rebar.lock
 
-RUN cd /hotr && rebar3 compile
-# RUN cd /hotr && rebar3 eunit
+RUN cd /hotr && rebar3 eunit
 RUN cd /hotr && rebar3 release -n prod
 
 EXPOSE 8080
