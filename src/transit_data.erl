@@ -260,7 +260,7 @@ transit_data_test_optimal_route(Tabs) ->
       {0, walk, WalkTime, stopB},
       {15, routeYellow, 5, stopC},
       {5, routeGreen, 5, stopE}
-    ] when WalkTime > 2, % FIXME: https://stackoverflow.com/questions/44212785/multiple-clauses-in-eunits-assertmatch
+    ] when WalkTime > 2 andalso WalkTime < 3,
     optimal_route(Tabs, [], walk, stopA, stopE)
   ).
 
