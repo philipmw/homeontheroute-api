@@ -1,3 +1,4 @@
+-include("./records/coords.hrl").
 -include("./records/stop.hrl").
 -include("./records/sconn.hrl").
 
@@ -18,19 +19,19 @@
 
 -define(TEST_STOP_A, #stop{
   id=stopA, name = <<"NW 100th Pl & 7th Ave NW (28010)">>,
-  lat=47.7026291, lon=-122.363785}).
+  coords=#coords{lat=47.7026291, lon=-122.363785}}).
 -define(TEST_STOP_B, #stop{
   id=stopB, name = <<"NW 103rd St & 3rd Ave NW (28000)">>,
-  lat=47.7035561, lon=-122.361244}).
+  coords=#coords{lat=47.7035561, lon=-122.361244}}).
 -define(TEST_STOP_C, #stop{
   id=stopC, name = <<"3rd Ave & Cedar St (2220)">>,
-  lat=47.6168709, lon=-122.348625}).
+  coords=#coords{lat=47.6168709, lon=-122.348625}}).
 -define(TEST_STOP_D, #stop{
   id=stopD, name = <<"3rd Ave & Union St (450)">>,
-  lat=47.6082497, lon=-122.336548}).
+  coords=#coords{lat=47.6082497, lon=-122.336548}}).
 -define(TEST_STOP_E, #stop{
   id=stopE, name = <<"S Jackson St & 5th Ave S (1471)">>,
-  lat=47.5991249, lon=-122.328041}).
+  coords=#coords{lat=47.5991249, lon=-122.328041}}).
 
 % Red line
 -define(TEST_SCONN_RED_A_B, #sconn{

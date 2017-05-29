@@ -4,8 +4,7 @@
 -record(stop, {
   id,
   name,
-  lat,
-  lon
+  coords
 }).
 
 -endif.

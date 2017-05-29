@@ -5,6 +5,7 @@
 -export([init/3, handle/2, terminate/3]).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("./records/coords.hrl").
 -include("./records/stop.hrl").
 
 init(_Type, Req, _Opts) ->
@@ -29,15 +30,18 @@ stop_to_ejson(StopRec) ->
   [
     {id, StopRec#stop.id},
     {name, StopRec#stop.name},
-    {lat, StopRec#stop.lat},
-    {lon, StopRec#stop.lon}
+    {lat, (StopRec#stop.coords)#coords.lat},
+    {lon, (StopRec#stop.coords)#coords.lon}
   ].
 
 stop_to_ejson_test() ->
   Stop = #stop{id = <<"1000">>,
     name = <<"Pine St & 9th Ave">>,
-    lat = 47.6134148,
-    lon = -122.332138},
+    coords = #coords{
+      lat = 47.6134148,
+      lon = -122.332138
+    }
+  },
   Ejson = stop_to_ejson(Stop),
   ?assertEqual(Ejson, [
     {id, <<"1000">>},

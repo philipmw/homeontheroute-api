@@ -41,8 +41,11 @@ load_stops_from_file_test() ->
   ?assertEqual(Stop, #stop{
     id = <<"1000">>,
     name = <<"Pine St & 9th Ave">>,
-    lat = 47.6134148,
-    lon = -122.332138}).
+    coords = #coords{
+      lat = 47.6134148,
+      lon = -122.332138
+    }
+  }).
 
 insert_stops_to_table([Stop|StopRest], StopsTableId) ->
   true = ets:insert(StopsTableId, Stop),
@@ -62,8 +65,10 @@ fileline_to_stop(BinaryLine) ->
   #stop{
     id=lists:nth(1, Fields),
     name=binary:replace(lists:nth(3, Fields), <<$">>, <<>>, [global]),
-    lat=binary_to_float(lists:nth(5, Fields)),
-    lon=binary_to_float(lists:nth(6, Fields))
+    coords=#coords{
+      lat=binary_to_float(lists:nth(5, Fields)),
+      lon=binary_to_float(lists:nth(6, Fields))
+    }
   }.
 
 % `ets_map` passes each item from the ETS table to a user-specified function.

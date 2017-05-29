@@ -22,10 +22,10 @@ hav(Theta) ->
 
 meters_between_stops(StopA, StopB) ->
   % https://en.wikipedia.org/wiki/Haversine_formula#The_haversine_formula
-  Phi1 = deg_to_rad(StopA#stop.lat),
-  Phi2 = deg_to_rad(StopB#stop.lat),
-  Lam1 = deg_to_rad(StopA#stop.lon),
-  Lam2 = deg_to_rad(StopB#stop.lon),
+  Phi1 = deg_to_rad((StopA#stop.coords)#coords.lat),
+  Phi2 = deg_to_rad((StopB#stop.coords)#coords.lat),
+  Lam1 = deg_to_rad((StopA#stop.coords)#coords.lon),
+  Lam2 = deg_to_rad((StopB#stop.coords)#coords.lon),
   H = hav(Phi2 - Phi1) +
     math:cos(Phi1) * math:cos(Phi2) * hav(Lam2 - Lam1),
   2 * ?EARTH_RADIUS_METERS * math:asin( math:sqrt(H) ).
