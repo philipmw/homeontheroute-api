@@ -159,8 +159,11 @@ dbgindent(StopsVisited) ->
 %   {0 min, Route 40, 4 min, Stop40043}
 %   {5 min, Route 28, 3 min, Stop40044}
 % ]
-optimal_trip(_Tabs, _State, _TransitModeToA, StopId, StopId) -> [];
-optimal_trip(Tabs, State, TransitModeToA, StopAId, StopZId) ->
+optimal_trip(Tabs, TransitModeToA, StopAId, StopBId) ->
+  optimal_trip(Tabs, TransitModeToA, StopAId, StopBId, ?FRESH_TRIP_STATE).
+
+optimal_trip(_Tabs, _TransitModeToA, StopId, StopId, _State) -> [];
+optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, State) ->
   io:fwrite("~soptimal_trip(~w, ~w, ~w, ~w) invoked...~n", [dbgindent(State#tripstate.stopsVisited), State, TransitModeToA, StopAId, StopZId]),
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
@@ -179,7 +182,7 @@ optimal_trip(Tabs, State, TransitModeToA, StopAId, StopZId) ->
       SConn#sconn.transit_mode,
       SConn#sconn.travel_mins,
       SConn#sconn.to_stop_id} |
-      optimal_trip(Tabs, State#tripstate{stopsVisited=[StopAId]++StopsVisited}, SConn#sconn.transit_mode, SConn#sconn.to_stop_id, StopZId)] ||
+      optimal_trip(Tabs, SConn#sconn.transit_mode, SConn#sconn.to_stop_id, StopZId, State#tripstate{stopsVisited=[StopAId]++StopsVisited})] ||
     SConn <- connections_from_stop(SConnsTab, StopAId, [StopAId]++StopsVisited)
   ],
   io:fwrite("~sTripsRidingThruStopB: ~w~n", [dbgindent(StopsVisited), TripsRidingThruStopB]),
@@ -189,7 +192,7 @@ optimal_trip(Tabs, State, TransitModeToA, StopAId, StopZId) ->
       walk,
       DistanceAB / ?WALK_METERS_PER_MIN, % travel mins
       StopB#stop.id} |
-      optimal_trip(Tabs, State#tripstate{stopsVisited=[StopAId]++StopsVisited}, walk, StopB#stop.id, StopZId)] ||
+      optimal_trip(Tabs, walk, StopB#stop.id, StopZId, State#tripstate{stopsVisited=[StopAId]++StopsVisited})] ||
     {StopB, DistanceAB} <- stops_walkable_from_stop(StopsTab, StopAId, [StopAId] ++ StopsVisited)
   ],
   io:fwrite("~sTripsWalkingToB: ~w~n", [dbgindent(StopsVisited), TripsWalkingToB]),
@@ -217,7 +220,7 @@ trip_test_optimal_trip_AB(Tabs) ->
     [
       {0, walk, WalkTime, stopB}
     ] when WalkTime > 7 andalso WalkTime < 8,
-    optimal_trip(Tabs, ?FRESH_TRIP_STATE, walk, stopA, stopB)
+    optimal_trip(Tabs, walk, stopA, stopB)
   ).
 
 trip_test_optimal_trip_AC(Tabs) ->
@@ -226,7 +229,7 @@ trip_test_optimal_trip_AC(Tabs) ->
       {0, walk, WalkTime, stopB},
       {8, routeYellow, 5, stopC}
     ],
-    optimal_trip(Tabs, ?FRESH_TRIP_STATE, walk, stopA, stopC)
+    optimal_trip(Tabs, walk, stopA, stopC)
   ).
 
 trip_test_optimal_trip_AE(Tabs) ->
@@ -236,7 +239,7 @@ trip_test_optimal_trip_AE(Tabs) ->
       {15, routeYellow, 5, stopC},
       {5, routeGreen, 5, stopE}
     ] when WalkTime > 7 andalso WalkTime < 8,
-    optimal_trip(Tabs, ?FRESH_TRIP_STATE, walk, stopA, stopE)
+    optimal_trip(Tabs, walk, stopA, stopE)
   ).
 
 route_time(Route) ->
@@ -256,7 +259,7 @@ fastest_trip(Tabs, FromCoords, ToCoords) ->
   FromStops = stops_walkable_from_coords(StopsTab, FromCoords),
   ToStops = stops_walkable_from_coords(StopsTab, ToCoords),
   OptimalRoutes = [
-    optimal_trip(Tabs, ?FRESH_TRIP_STATE, walk, FromStop, ToStop) ||
+    optimal_trip(Tabs, walk, FromStop, ToStop) ||
     FromStop <- FromStops,
     ToStop <- ToStops
   ],
