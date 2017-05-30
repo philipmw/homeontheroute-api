@@ -16,18 +16,17 @@ setup_transit_data() ->
   ets:insert(StopsTableId, ?TEST_STOP_C),
   ets:insert(StopsTableId, ?TEST_STOP_D),
   ets:insert(StopsTableId, ?TEST_STOP_E),
+  ets:insert(StopsTableId, ?TEST_STOP_F),
   io:fwrite("Inserted test stops data into ~w~n", [StopsTableId]),
 
   SConnsTableId = ets:new(transit_data_unit_sconns, [bag, {keypos, #sconn.from_stop_id}]),
   ets:insert(TablesTableId, {sconns, SConnsTableId}),
   ets:insert(SConnsTableId, ?TEST_SCONN_RED_A_B),
-  ets:insert(SConnsTableId, ?TEST_SCONN_RED_B_C),
-  ets:insert(SConnsTableId, ?TEST_SCONN_RED_C_D),
-  ets:insert(SConnsTableId, ?TEST_SCONN_RED_D_E),
   ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_B_C),
   ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_C_D),
   ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_D_E),
-  ets:insert(SConnsTableId, ?TEST_SCONN_GREEN_C_E),
+  ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_E_F),
+  ets:insert(SConnsTableId, ?TEST_SCONN_GREEN_C_F),
   io:fwrite("Inserted test stops connections data into ~w~n", [SConnsTableId]),
 
   TablesTableId.

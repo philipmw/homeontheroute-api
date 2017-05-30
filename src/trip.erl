@@ -60,14 +60,14 @@ connections_from_stop(SConnsTab, StopAId, StopIdsToExclude) ->
 trip_test_connections_from_stop_1(Tabs) ->
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
   ?assertEqual(
-    [?TEST_SCONN_RED_B_C, ?TEST_SCONN_YELLOW_B_C],
-    connections_from_stop(SConnsTab, stopB, [])
+    [?TEST_SCONN_YELLOW_C_D, ?TEST_SCONN_GREEN_C_F],
+    connections_from_stop(SConnsTab, stopC, [])
   ).
 
 trip_test_connections_from_stop_2(Tabs) ->
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
   ?assertEqual(
-    [?TEST_SCONN_GREEN_C_E],
+    [?TEST_SCONN_GREEN_C_F],
     connections_from_stop(SConnsTab, stopC, [stopD])
   ).
 
@@ -226,20 +226,21 @@ trip_test_optimal_trip_AB(Tabs) ->
 trip_test_optimal_trip_AC(Tabs) ->
   ?assertMatch(
     [
+      % too tired to walk the whole way, so we'll catch the Yellow Line one stop
       {0, walk, WalkTime, stopB},
-      {8, routeYellow, 5, stopC}
-    ],
+      {5, routeYellow, 3, stopC}
+    ] when WalkTime > 7 andalso WalkTime < 8,
     optimal_trip(Tabs, walk, stopA, stopC)
   ).
 
-trip_test_optimal_trip_AE(Tabs) ->
+trip_test_optimal_trip_AF(Tabs) ->
   ?assertMatch(
     [
       {0, walk, WalkTime, stopB},
-      {15, routeYellow, 5, stopC},
-      {5, routeGreen, 5, stopE}
+      {5, routeYellow, 3, stopC},
+      {3, routeGreen, 3, stopF}
     ] when WalkTime > 7 andalso WalkTime < 8,
-    optimal_trip(Tabs, walk, stopA, stopE)
+    optimal_trip(Tabs, walk, stopA, stopF)
   ).
 
 route_time(Route) ->
@@ -282,7 +283,7 @@ trip_test_() ->
       fun trip_test_connections_from_stop_2/1,
       fun trip_test_optimal_trip_AB/1,
       fun trip_test_optimal_trip_AC/1,
-      fun trip_test_optimal_trip_AE/1,
+      fun trip_test_optimal_trip_AF/1,
       fun trip_test_stops_walkable_from_stop/1,
       fun trip_test_fastest_trip/1
     ]}
