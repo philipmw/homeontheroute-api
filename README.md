@@ -2,6 +2,8 @@
 
 An OTP application providing a public HTTP API that powers [Home On The Route](http://homeontheroute.com), a web app helping you find the perfect neighborhood for your car-free lifestyle.
 
+Home On The Route offers _personalized_ Transit Scores for your area.  [The Trouble with "Transit Score".](http://humantransit.org/2017/03/the-trouble-with-transit-score.html)
+
 ## Build status
 
 * prod: [![CircleCI](https://circleci.com/gh/philipmw/homeontheroute-api/tree/master.svg?style=svg)](https://circleci.com/gh/philipmw/homeontheroute-api/tree/master)
