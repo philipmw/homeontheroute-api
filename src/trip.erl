@@ -77,7 +77,7 @@ stops_walkable_from_coords(StopsTab, FromCoords, MaxWalkMinsAllowed) ->
   Distances = transit_data:ets_map(StopsTab, fun(StopX) ->
     {StopX, earth:meters_between_coords(FromCoords, StopX#stop.coords)} end),
   lists:filter(
-    fun({StopX, MetersAway}) ->
+    fun({_StopX, MetersAway}) ->
       (MetersAway < MaxWalkMinsAllowed*?WALK_METERS_PER_MIN)
     end,
     Distances).
