@@ -2,10 +2,10 @@
 -include("./records/stop.hrl").
 -include("./records/sconn.hrl").
 
-%            +---+     +---+     +---+     +---+     +---+     +---+
-%            | A |     | B |     | C |     | D |     | E |     | F |
-%            +---+     +---+     +---+     +---+     +---+     +---+
-%     walking: -----8---------8---------8---------8---------8-----
+%            +---+     +---+     +---+     +---+     +---+     +---+     +---+
+%            | A |     | B |     | C |     | D |     | E |     | F |     | Z |
+%            +---+     +---+     +---+     +---+     +---+     +---+     +---+
+%     walking: -----8---------8---------8---------8---------8---------60----
 %
 %    red line: x----3----x
 %     \ wait 10 mins
@@ -43,6 +43,9 @@
 -define(TEST_STOP_F, #stop{
   id=stopF, name = <<"Stop F">>,
   coords=#coords{lat=47.031, lon=-122.0001}}).
+-define(TEST_STOP_Z, #stop{
+  id=stopZ, name = <<"Stop Z">>,
+  coords=#coords{lat=49, lon=-122}}).
 
 % Red line
 -define(TEST_SCONN_RED_A_B, #sconn{

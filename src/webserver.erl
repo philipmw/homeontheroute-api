@@ -13,9 +13,9 @@ start() ->
     ]}
   ]),
   io:fwrite("Starting webserver~n"),
-  {ok, _Pid} = cowboy:start_http(my_http_listener, 10,
+  {ok, _} = cowboy:start_clear(my_http_listener,
     [{port, 8080}],
-    [{env, [{dispatch, Dispatch}]}]
+    #{env => #{dispatch => Dispatch}}
   ),
   {ok, spawn_link(?MODULE, loop, [])}.
 

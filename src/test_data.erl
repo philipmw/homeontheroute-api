@@ -17,6 +17,7 @@ setup_transit_data() ->
   ets:insert(StopsTableId, ?TEST_STOP_D),
   ets:insert(StopsTableId, ?TEST_STOP_E),
   ets:insert(StopsTableId, ?TEST_STOP_F),
+  ets:insert(StopsTableId, ?TEST_STOP_Z),
   io:fwrite("Inserted test stops data into ~w~n", [StopsTableId]),
 
   SConnsTableId = ets:new(transit_data_unit_sconns, [bag, {keypos, #sconn.from_stop_id}]),

@@ -4,9 +4,10 @@ An OTP application providing a public HTTP API that powers [Home On The Route](h
 
 Home On The Route offers _personalized_ Transit Scores for your area.  [The Trouble with "Transit Score".](http://humantransit.org/2017/03/the-trouble-with-transit-score.html)
 
-## Build status
+## Project status
 
-* prod: [![CircleCI](https://circleci.com/gh/philipmw/homeontheroute-api/tree/master.svg?style=svg)](https://circleci.com/gh/philipmw/homeontheroute-api/tree/master)
+The project currently is not functional.
+It is in intermittent development in my free time, as a hobby project.
 
 ## API
 
@@ -32,7 +33,9 @@ Query params:
 
 Returns [GeoJSON](http://geojson.org/) of pins, within the specified bounding box, spaced _<radius>_ meters apart, each having a `transit-score` metadata property.
 
-## Architecture
+## Development
+
+### Architecture
 
                     [Application supervisor]
                                 |
@@ -44,14 +47,14 @@ Returns [GeoJSON](http://geojson.org/) of pins, within the specified bounding bo
                                 v
                              [Cowboy]
 
-## Add GTFS data
+### Add GTFS data
 
 This application needs GTFS data.  (Tested only with King County Metro's datasets.)
 Because GTFS data is large, I don't include it in the source repository, so download it yourself.
 The latest King County Metro GTFS dataset is downloaded as part of this project's continuous deployment,
 so refer to `./.circleci/config.yml` for the details.
 
-## Data structures
+### Data structures
 
 | ID   | Name                  | Latitude | Longitude |
 | ---: | :-------------------- | -------: | --------: |
@@ -64,11 +67,20 @@ so refer to `./.circleci/config.yml` for the details.
 | 1000         | 3200       | route 28     | 4         | 20          |
 [Direct connections between stops (records/sconn.hrl)]
 
-## Build
+### Install development software
+
+I develop on macOS with [IntelliJ IDEA](https://www.jetbrains.com/idea/) and
+the Erlang plugin.
+
+Use Homebrew to install additional tools:
+
+    $ brew install rebar3
+
+### Build
 
     $ rebar3 compile
 
-## Test
+### Test
 
     $ rebar3 eunit
 
@@ -91,6 +103,8 @@ And look for this output:
     =PROGRESS REPORT==== 3-Mar-2017::19:08:02 ===
              application: homeontheroute
               started_at: nonode@nohost
+
+If it fails to start: did you add your own GTFS data?
 
 This is all you need for complete local development.
 

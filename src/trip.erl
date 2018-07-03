@@ -130,12 +130,19 @@ total_mins_test() ->
 dbgindent(StopsVisited) ->
   string:chars($., 3*length(StopsVisited)).
 
+% A predicate to determine whether a trip ends with the `no_trip` atom,
+% signifying that the path finder ran into a dead end.
+pred_complete_trips([]) ->
+  false;
+pred_complete_trips(Trip) ->
+  lists:last(Trip) =/= no_trips.
+
 % Find optimal trip between Stop A and Stop Z, when you arrived at Stop A
 % using a specific mode of transit.
 % Transit Modes: walk | RouteId
 %
 % Base case:
-%   We arrived at Stop Z.  (Stop A = StopZ)
+%   We arrived at Stop Z.  (Stop A = Stop Z)
 % Inductive cases:
 %   a) Find a <<stops connection>> from Stop A to Stop B, then
 %      solve the sub-problem of Optimal Route from B to Z.
@@ -149,6 +156,9 @@ dbgindent(StopsVisited) ->
 %   ...
 %   {<mode-switch-mins>, <transit-mode>, <transit-time>, <to-stop-40044>}
 % ]
+% with the edge case that the list of transit segments may be exactly
+% [no_trips], if we could not find any trips between Stop A and stop Z.
+%
 % Example output:
 % [
 %   {3 min, Route 40, 2 min, Stop40041}
@@ -156,15 +166,20 @@ dbgindent(StopsVisited) ->
 %   {0 min, Route 40, 4 min, Stop40043}
 %   {5 min, Route 28, 3 min, Stop40044}
 % ]
-optimal_trip(Tabs, TransitModeToA, StopAId, StopZId) ->
-  optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, 0, []).
+% or
+% [
+%   no_trips
+% ]
+optimal_trip_between_stops(Tabs, TransitModeToA, StopAId, StopZId) ->
+  optimal_trip_between_stops(Tabs, TransitModeToA, StopAId, StopZId, 0, []).
 
-optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins) ->
-  optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins, []).
+optimal_trip_between_stops(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins) ->
+  optimal_trip_between_stops(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins, []).
 
-optimal_trip(_Tabs, _TransitModeToA, StopId, StopId, _WalkedMins, _StopsVisited) -> [];
-optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited) ->
-  io:fwrite("~soptimal_trip(~w, ~w, ~w, ~w, ~w) invoked...~n", [dbgindent(StopsVisited), TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited]),
+optimal_trip_between_stops(_Tabs, _TransitModeToA, StopId, StopId, _WalkedMins, _StopsVisited) -> [];
+optimal_trip_between_stops(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited) ->
+  io:fwrite("~soptimal_trip_between_stops(~w, ~w, ~w, ~w, ~w) invoked...~n",
+    [dbgindent(StopsVisited), TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited]),
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
 
@@ -180,34 +195,36 @@ optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited) -
   %   [{5 min, Route 28, 3 min, Stop28028}, [...optimal route from Stop28028]],
   % ]
 
-  TripsRidingThruStopB = [
+  TripsRidingThruStopB = lists:filter(fun pred_complete_trips/1, [
     [{mins_of_mode_switch(StopAId, TransitModeToA, SConn#sconn.transit_mode, SConn#sconn.wait_mins),
       SConn#sconn.transit_mode,
       SConn#sconn.travel_mins,
       SConn#sconn.to_stop_id} |
-      optimal_trip(Tabs,
-                   SConn#sconn.transit_mode,
-                   SConn#sconn.to_stop_id,
-                   StopZId,
-                   WalkedMins,
-                   [StopAId]++StopsVisited)] ||
+      optimal_trip_between_stops(
+        Tabs,
+        SConn#sconn.transit_mode,
+        SConn#sconn.to_stop_id,
+        StopZId,
+        WalkedMins,
+        [StopAId]++StopsVisited)] ||
     SConn <- connections_from_stop(SConnsTab, StopAId, [StopAId]++StopsVisited)
-  ],
+  ]),
   io:fwrite("~sTripsRidingThruStopB: ~w~n", [dbgindent(StopsVisited), TripsRidingThruStopB]),
 
-  TripsWalkingToB = [
+  TripsWalkingToB = lists:filter(fun pred_complete_trips/1, [
     [{mins_of_mode_switch(StopAId, TransitModeToA, walk, 0),
       walk,
       DistanceAB / ?WALK_METERS_PER_MIN, % travel mins
       StopB#stop.id} |
-      optimal_trip(Tabs,
-                   walk,
-                   StopB#stop.id,
-                   StopZId,
-                   WalkedMins + (DistanceAB / ?WALK_METERS_PER_MIN),
-                   [StopAId]++StopsVisited)] ||
+      optimal_trip_between_stops(
+        Tabs,
+        walk,
+        StopB#stop.id,
+        StopZId,
+        WalkedMins + (DistanceAB / ?WALK_METERS_PER_MIN),
+        [StopAId]++StopsVisited)] ||
     {StopB, DistanceAB} <- stops_walkable_from_stop(StopsTab, StopAId, [StopAId] ++ StopsVisited, MaxWalkMinsAllowed)
-  ],
+  ]),
   io:fwrite("~sTripsWalkingToB: ~w~n", [dbgindent(StopsVisited), TripsWalkingToB]),
 
   % Direct walking (as the crow flies) is an option too...
@@ -216,44 +233,58 @@ optimal_trip(Tabs, TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited) -
 
   AllPossibleTrips =
     if DirectRouteWalkMins =< MaxWalkMinsAllowed ->
-        DirectRoute = [[{0, walk, DirectRouteWalkMins, StopZId}]],
-        TripsRidingThruStopB ++ TripsWalkingToB ++ DirectRoute;
+        DirectRoute = [{0, walk, DirectRouteWalkMins, StopZId}],
+        TripsRidingThruStopB ++ TripsWalkingToB ++ [DirectRoute];
       true ->
         TripsRidingThruStopB ++ TripsWalkingToB
     end,
   io:fwrite("~sAllPossibleTrips: ~w~n", [dbgindent(StopsVisited), AllPossibleTrips]),
 
-  OptimalTrip = min_by(AllPossibleTrips, fun total_mins/1),
-  io:fwrite("~soptimal_trip(~w, ~w, ~w, ~w) => ~w~n", [dbgindent(StopsVisited), TransitModeToA, StopAId, StopZId, StopsVisited, OptimalTrip]),
-  OptimalTrip.
+  io:fwrite("~soptimal_trip_between_stops(~w, ~w, ~w, ~w, ~w) => ",
+    [dbgindent(StopsVisited), TransitModeToA, StopAId, StopZId, WalkedMins, StopsVisited]),
+  if length(AllPossibleTrips) == 0 ->
+      % Why do I return `[no_trips]` instead of simply `no_trips`?
+      % Because the output of this function is assembled into a list using a pipe:
+      %   [SomeHeadElement | optimal_trip_between_stops(blah, blah)]
+      % and the pipe operator expects a list on the right-hand side.
+      io:fwrite("[no_trips]~n"),
+      [no_trips];
+    true ->
+      OptimalTrip = min_by(AllPossibleTrips, fun total_mins/1),
+      io:fwrite("~w~n", [OptimalTrip]),
+      OptimalTrip
+  end.
 
-trip_test_optimal_trip_AB(Tabs) ->
+trip_test_optimal_trip_between_stops_AB(Tabs) ->
   ?assertMatch(
     [
       {0, walk, WalkTime, stopB}
     ] when WalkTime > 7 andalso WalkTime < 8,
-    optimal_trip(Tabs, walk, stopA, stopB)
+      optimal_trip_between_stops(Tabs, walk, stopA, stopB)
   ).
 
-trip_test_optimal_trip_AC(Tabs) ->
+trip_test_optimal_trip_between_stops_AC(Tabs) ->
   ?assertMatch(
     [
       % too tired to walk the whole way, so we'll catch the Yellow Line one stop
       {0, walk, WalkTime, stopB},
       {5, routeYellow, 3, stopC}
     ] when WalkTime > 7 andalso WalkTime < 8,
-    optimal_trip(Tabs, walk, stopA, stopC)
+      optimal_trip_between_stops(Tabs, walk, stopA, stopC)
   ).
 
-trip_test_optimal_trip_AF(Tabs) ->
+trip_test_optimal_trip_between_stops_AF(Tabs) ->
   ?assertMatch(
     [
       {0, walk, WalkTime, stopB},
       {5, routeYellow, 3, stopC},
       {3, routeGreen, 3, stopF}
     ] when WalkTime > 7 andalso WalkTime < 8,
-    optimal_trip(Tabs, walk, stopA, stopF)
+      optimal_trip_between_stops(Tabs, walk, stopA, stopF)
   ).
+
+trip_test_optimal_trip_between_stops_AZ(Tabs) ->
+  ?assertMatch([no_trips], optimal_trip_between_stops(Tabs, walk, stopA, stopZ)).
 
 route_time(Route) ->
   lists:map(
@@ -261,7 +292,7 @@ route_time(Route) ->
     Route
   ).
 
-fastest_trip(Tabs, FromCoords, ToCoords) ->
+optimal_trip_between_coords(Tabs, FromCoords, ToCoords) ->
   % Algorithm:
   % Let FromStops be the set of stops walkable from FromCoords.
   % Let ToStops be the set of stops walkable to ToCoords.
@@ -271,23 +302,32 @@ fastest_trip(Tabs, FromCoords, ToCoords) ->
   {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
   FromStops = stops_walkable_from_coords(StopsTab, FromCoords, ?MAX_WALK_MINS),
   ToStops = stops_walkable_from_coords(StopsTab, ToCoords, ?MAX_WALK_MINS),
-  io:fwrite("fastest_trip: FromStops=~w~n", [FromStops]),
-  io:fwrite("fastest_trip: ToStops=~w~n", [ToStops]),
-  OptimalRoutes = [
-    optimal_trip(Tabs,
-                 walk,
-                 FromStop#stop.id,
-                 ToStop#stop.id,
-                 FromStopMeters / ?WALK_METERS_PER_MIN) ||
+
+  PredFilterNoTrips = fun(Trip) ->
+    io:fwrite("PredFilterNoTrips: trip = ~w~n", [Trip]),
+    true
+                      end,
+  OptimalRoutes = lists:filter(PredFilterNoTrips, [
+    [
+      optimal_trip_between_stops(
+        Tabs,
+        walk,
+        FromStop#stop.id,
+        ToStop#stop.id,
+        FromStopMeters / ?WALK_METERS_PER_MIN
+      ) ++ [
+        {0, walk, earth:meters_between_coords(ToStop#stop.coords, ToCoords) / ?WALK_METERS_PER_MIN, to_dest_coords}
+      ]] ||
     {FromStop, FromStopMeters} <- FromStops,
     {ToStop, _ToStopMeters} <- ToStops
-  ],
+  ]),
   min_by(OptimalRoutes, fun(Route) -> route_time(Route) end).
 
-trip_test_fastest_trip(Tabs) ->
+trip_test_optimal_trip_between_coords(Tabs) ->
   FromCoords = #coords{lat=47, lon=-122},
   ToCoords = #coords{lat=47.032, lon=-122},
-  Trip = fastest_trip(Tabs, FromCoords, ToCoords),
+  Trip = optimal_trip_between_coords(Tabs, FromCoords, ToCoords),
+  io:fwrite("Test Trip: ~w~n", [Trip]),
   % from-stops: {A, B}.  to-stops: {E, F}.
   ?assertEqual(1, 2).
 
@@ -303,10 +343,11 @@ trip_test_() ->
       fun trip_test_stops_walkable_from_coords/1,
       fun trip_test_connections_from_stop_1/1,
       fun trip_test_connections_from_stop_2/1,
-      fun trip_test_optimal_trip_AB/1,
-      fun trip_test_optimal_trip_AC/1,
-      fun trip_test_optimal_trip_AF/1,
+      fun trip_test_optimal_trip_between_stops_AB/1,
+      fun trip_test_optimal_trip_between_stops_AC/1,
+      fun trip_test_optimal_trip_between_stops_AF/1,
+      fun trip_test_optimal_trip_between_stops_AZ/1,
       fun trip_test_stops_walkable_from_stop/1,
-      fun trip_test_fastest_trip/1
+      fun trip_test_optimal_trip_between_coords/1
     ]}
   }.

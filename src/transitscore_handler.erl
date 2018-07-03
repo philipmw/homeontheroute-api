@@ -2,14 +2,11 @@
 
 -behaviour(cowboy_http_handler).
 
--export([init/3, handle/2, terminate/3]).
+-export([init/2]).
 
 -include_lib("eunit/include/eunit.hrl").
 
-init(_Type, Req, _Opts) ->
-  {ok, Req, nostate}.
-
-handle(Req, _State) ->
+init(Req, _State) ->
   ok = gen_server:cast(visitor_counter, newvisitor),
   GeoJSON = #{
     <<"type">> => <<"FeatureCollection">>,
@@ -26,15 +23,8 @@ handle(Req, _State) ->
       }
     ]
   },
-  {ok, Req2} = cowboy_req:reply(200,
-    [
-      {<<"Content-Type">>, <<"application/json">>},
-      {<<"Access-Control-Allow-Origin">>, <<"*">>}
-    ],
-    jsone:encode(GeoJSON),
-    Req),
+  Req2 = cowboy_req:reply(200, #{
+    <<"Content-Type">> => <<"application/json">>,
+    <<"Access-Control-Allow-Origin">> => <<"*">>
+  }, jsone:encode(GeoJSON), Req),
   {ok, Req2, _State}.
-
-terminate(_Reason, _Req, _State) ->
-  ok.
-
