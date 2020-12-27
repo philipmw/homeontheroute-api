@@ -45,7 +45,7 @@
   coords=#coords{lat=47.031, lon=-122.0001}}).
 -define(TEST_STOP_Z, #stop{
   id=stopZ, name = <<"Stop Z">>,
-  coords=#coords{lat=49, lon=-122}}).
+  coords=#coords{lat=47.077, lon=-122}}).
 
 % Red line
 -define(TEST_SCONN_RED_A_B, #sconn{

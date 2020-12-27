@@ -1,4 +1,4 @@
-% How much time is a typical person willing to spend walking?
+% How much time is a typical person willing to spend walking to the nearest stop?
 -define(MAX_WALK_MINS, 15).
 
 % https://en.wikipedia.org/wiki/Preferred_walking_speed
