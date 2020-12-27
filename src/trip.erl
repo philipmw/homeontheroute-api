@@ -58,14 +58,14 @@ connections_from_stop(SConnsTab, StopAId, StopIdsToExclude) ->
     AllSConns).
 
 trip_test_connections_from_stop_1(Tabs) ->
-  {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
+  [{sconns, SConnsTab}] = ets:lookup(Tabs, sconns),
   ?assertEqual(
     [?TEST_SCONN_YELLOW_C_D, ?TEST_SCONN_GREEN_C_F],
     connections_from_stop(SConnsTab, stopC, sets:new())
   ).
 
 trip_test_connections_from_stop_2(Tabs) ->
-  {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
+  [{sconns, SConnsTab}] = ets:lookup(Tabs, sconns),
   ?assertEqual(
     [?TEST_SCONN_GREEN_C_F],
     connections_from_stop(SConnsTab, stopC, sets:from_list([stopD]))
@@ -83,7 +83,7 @@ stops_walkable_from_coords(StopsTab, FromCoords, MaxWalkMinsAllowed) ->
     Distances).
 
 trip_test_stops_walkable_from_coords(Tabs) ->
-  {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
+  [{stops, StopsTab}] = ets:lookup(Tabs, stops),
   ?assertMatch(
     [
       % These are out of order in real data, and I don't care enough
@@ -92,7 +92,7 @@ trip_test_stops_walkable_from_coords(Tabs) ->
       {?TEST_STOP_A, DistanceA}
     ] when DistanceA > 111 andalso DistanceA < 112
       andalso DistanceB > 778 andalso DistanceB < 779,
-      stops_walkable_from_coords(StopsTab, #coords{lat=47, lon=-122}, ?MAX_WALK_MINS)
+      stops_walkable_from_coords(StopsTab, #coords{lat=47, lon=-122}, ?MAX_WALK_MINS_TO_FIRST_STOP)
   ).
 
 % All stops surrounding the input stop, excluding the given set of stops.
@@ -107,10 +107,10 @@ stops_walkable_from_stop(StopsTab, FromStopId, StopIdsExcluded, MaxWalkMinsAllow
     stops_walkable_from_coords(StopsTab, FromStop#stop.coords, MaxWalkMinsAllowed)).
 
 trip_test_stops_walkable_from_stop(Tabs) ->
-  {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
+  [{stops, StopsTab}] = ets:lookup(Tabs, stops),
   ?assertMatch(
     [{?TEST_STOP_B, Distance}] when Distance > 667 andalso Distance < 668,
-      stops_walkable_from_stop(StopsTab, stopA, sets:from_list([stopA]), ?MAX_WALK_MINS)
+      stops_walkable_from_stop(StopsTab, stopA, sets:from_list([stopA]), ?MAX_WALK_MINS_TO_FIRST_STOP)
   ).
 
 -spec total_mins([{number(), _, number(), _}]) -> number().
@@ -180,10 +180,10 @@ optimal_trip_to_stop(Tabs, InitSegs, StopZId) ->
   StopsVisited = segs_stop_ids(InitSegs),
   {_, TransitModeToA, _, StopAId} = lists:last(InitSegs),
 
-  {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
-  {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
+  [{stops, StopsTab}] = ets:lookup(Tabs, stops),
+  [{sconns, SConnsTab}] = ets:lookup(Tabs, sconns),
 
-  MaxWalkMinsAllowed = ?MAX_WALK_MINS - WalkedMins,
+  MaxWalkMinsAllowed = ?MAX_WALK_MINS_TO_FIRST_STOP - WalkedMins,
 
   % Now suppose we have a set of Stops B, reachable from stop A via some transit-mode.
 
@@ -291,9 +291,9 @@ optimal_trip_between_coords(Tabs, FromCoords, ToCoords) ->
   % For every pair of stops in the Cartesian product of FromStops and ToStops,
   %   find the optimal route.
   % Return the time of the fastest optimal route.
-  {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
-  FromStops = stops_walkable_from_coords(StopsTab, FromCoords, ?MAX_WALK_MINS),
-  ToStops = stops_walkable_from_coords(StopsTab, ToCoords, ?MAX_WALK_MINS),
+  [{stops, StopsTab}] = ets:lookup(Tabs, stops),
+  FromStops = stops_walkable_from_coords(StopsTab, FromCoords, ?MAX_WALK_MINS_TO_FIRST_STOP),
+  ToStops = stops_walkable_from_coords(StopsTab, ToCoords, ?MAX_WALK_MINS_TO_FIRST_STOP),
   io:fwrite("optimal_trip_between_coords: FromStops=~w ToStops=~w~n", [FromStops, ToStops]),
 
   OptimalRoutes = [ optimal_trip_to_stop(

@@ -13,24 +13,59 @@
 
 create_all_ets() ->
   TopTableId = ets:new(transit_data_top, [named_table]),
-  ets:insert(TopTableId, {stops, create_stops_ets(TopTableId)}),
-  ets:insert(TopTableId, {routes, create_routes_ets(TopTableId)}),
+  ets:insert(TopTableId, {stops, create_stops_ets()}),
+  ets:insert(TopTableId, {routes, create_routes_ets()}),
+  ets:insert(TopTableId, {trips, create_trips_ets()}),
+  ets:insert(TopTableId, {segments, create_segments_ets()}),
+  ets:insert(TopTableId, {sconns, create_sconns_ets(TopTableId)}),
   TopTableId.
 
-create_stops_ets(_) ->
+create_stops_ets() ->
   io:fwrite("Creating Stops table~n"),
-  TableId = ets:new(stops, [{keypos, #stop.id}]),
+  TableId = transit_stops_data:make_table(),
   Stops = transit_stops_data:load_from_file(?GTFS_BASEDIR),
+  io:fwrite("Read ~B stops from file~n", [lists:flatlength(Stops)]),
   ok = transit_stops_data:insert_to_table(Stops, TableId),
-  io:fwrite("Loaded ~B stops into ETS table ID ~w~n", [lists:flatlength(Stops), TableId]),
+  io:fwrite("Loaded stops into ETS table ID ~w~n", [TableId]),
   TableId.
 
-create_routes_ets(_) ->
+create_routes_ets() ->
   io:fwrite("Creating Routes table~n"),
-  TableId = ets:new(routes, []),
+  TableId = transit_routes_data:make_table(),
   Routes = transit_routes_data:load_from_file(?GTFS_BASEDIR),
+  io:fwrite("Read ~B routes from file~n", [lists:flatlength(Routes)]),
   ok = transit_routes_data:insert_to_table(Routes, TableId),
-  io:fwrite("Loaded ~B routes into ETS table ID ~w~n", [lists:flatlength(Routes), TableId]),
+  io:fwrite("Loaded routes into ETS table ID ~w~n", [TableId]),
+  TableId.
+
+create_trips_ets() ->
+  io:fwrite("Creating Trips table~n"),
+  TableId = transit_trips_data:make_table(),
+  Trips = transit_trips_data:load_from_file(?GTFS_BASEDIR),
+  io:fwrite("Read ~B trips from file~n", [lists:flatlength(Trips)]),
+  ok = transit_trips_data:insert_to_table(Trips, TableId),
+  io:fwrite("Loaded trips into ETS table ID ~w~n", [TableId]),
+  TableId.
+
+create_segments_ets() ->
+  io:fwrite("Creating Segments table~n"),
+  TableId = transit_segments_data:make_table(),
+  Segments = transit_segments_data:load_from_file(?GTFS_BASEDIR),
+  io:fwrite("Assembled ~B transit segments~n", [lists:flatlength(Segments)]),
+  ok = transit_segments_data:insert_to_table(Segments, TableId),
+  io:fwrite("Loaded transit segments into ETS table ID ~w~n", [TableId]),
+  TableId.
+
+create_sconns_ets(TopTableId) ->
+  io:fwrite("Creating Sconns table~n"),
+  TableId = transit_sconns_data:make_table(),
+  [{segments, SegTableId}] = ets:lookup(TopTableId, segments),
+  [{routes, RouteTableId}] = ets:lookup(TopTableId, routes),
+  [{trips, TripTableId}] = ets:lookup(TopTableId, trips),
+  Sconns = transit_sconns_data:assemble(RouteTableId, SegTableId, TripTableId),
+  io:fwrite("Assembled ~B sconns~n", [lists:flatlength(Sconns)]),
+  ok = transit_sconns_data:insert_to_table(Sconns, TableId),
+  io:fwrite("Loaded sconns into ETS table ID ~w~n", [TableId]),
   TableId.
 
 % `ets_map` passes each item from the ETS table to a user-specified function.
@@ -44,7 +79,7 @@ ets_map(Tab, Fun, Mapped, Key, [Value]) ->
   ets_map(Tab, Fun, NewMapped, ets:next(Tab, Key)).
 
 transit_data_test_ets_map(Tabs) ->
-  {stops, StopsTab} = lists:nth(1, ets:lookup(Tabs, stops)),
+  [{stops, StopsTab}] = ets:lookup(Tabs, stops),
   Mapped = ets_map(StopsTab, fun(_X) -> 1 end),
   ?assertEqual(7, lists:sum(Mapped)).
 
@@ -61,7 +96,7 @@ sconns_between(SConnsTab, StopAId, StopBId) ->
   lists:filter(fun (Sconn) -> Sconn#sconn.to_stop_id == StopBId end, SConnsFromA).
 
 transit_data_test_sconns_between(Tabs) ->
-  {sconns, SConnsTab} = lists:nth(1, ets:lookup(Tabs, sconns)),
+  [{sconns, SConnsTab}] = ets:lookup(Tabs, sconns),
   ?assertEqual(
     [?TEST_SCONN_RED_A_B],
     sconns_between(SConnsTab, stopA, stopB)

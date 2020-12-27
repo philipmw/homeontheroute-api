@@ -1,4 +1,4 @@
--module(transit_routes_data).
+-module(transit_trips_data).
 -export([
   insert_to_table/2,
   load_from_file/1,
@@ -7,28 +7,27 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include("gtfs.hrl").
--include("records/route.hrl").
+-include("records/trip.hrl").
 
 make_table() ->
-  ets:new(routes, [{keypos, #route.id}]).
+  ets:new(trips, [{keypos, #trip.trip_id}]).
 
 load_from_file(GtfsBasedir) ->
   Filename = case application:get_application() of
-               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/routes.txt";
-               _ -> "./priv/" ++ GtfsBasedir ++ "/routes.txt"
+               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/trips.txt";
+               _ -> "./priv/" ++ GtfsBasedir ++ "/trips.txt"
              end,
-  io:fwrite("Loading routes from ~s~n", [Filename]),
+  io:fwrite("Loading trips from ~s~n", [Filename]),
   {ok, DataBinary} = file:read_file(Filename),
   DataBinaryList = binary:split(DataBinary, <<$\n>>, [global]),
-  [fileline_to_route(B) || B <- select_good_lines(DataBinaryList)].
+  [fileline_to_trip(B) || B <- select_good_lines(DataBinaryList)].
 
 load_from_file_test() ->
-  Routes = load_from_file(?GTFS_BASEDIR),
-  [Route|_] = Routes,
-  ?assertEqual(Route, #route{
-    id = <<"100001">>,
-    short_name = <<"1">>,
-    desc = <<"Kinnear - Downtown Seattle">>
+  Trips = load_from_file(?GTFS_BASEDIR),
+  [Trip|_] = Trips,
+  ?assertEqual(Trip, #trip{
+    trip_id = <<"34745815">>,
+    route_id = <<"100160">>
   }).
 
 insert_to_table([Route|Rest], RoutesTableId) ->
@@ -42,13 +41,12 @@ select_good_lines(DataBinaryList) ->
   % skip empty lines
   lists:filter(fun(BL) -> BL /= <<>> end, HeaderlessList).
 
-fileline_to_route(BinaryLine) ->
+fileline_to_trip(BinaryLine) ->
 %%  io:fwrite("Line: ~s~n", [BinaryLine]),
   Fields = binary:split(BinaryLine, <<$,>>, [global]),
 %%  io:fwrite("Fields: ~s~n", [Fields]),
-  #route{
-    id = lists:nth(1, Fields),
-    short_name = binary:replace(lists:nth(3, Fields), <<$">>, <<>>, [global]),
-    desc = binary:replace(lists:nth(5, Fields), <<$">>, <<>>, [global])
+  #trip{
+    trip_id = lists:nth(3, Fields),
+    route_id = lists:nth(1, Fields)
   }.
 

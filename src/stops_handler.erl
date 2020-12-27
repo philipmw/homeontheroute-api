@@ -10,7 +10,7 @@
 
 init(Req, TransitTableId) ->
   ok = gen_server:cast(visitor_counter, newvisitor),
-  {stops, StopsTableId} = lists:nth(1, ets:lookup(TransitTableId, stops)),
+  [{stops, StopsTableId}] = ets:lookup(TransitTableId, stops),
   Stops = ets:foldl(fun (E, A) -> A ++ [stop_to_ejson(E)] end, [], StopsTableId),
   Req2 = cowboy_req:reply(200, #{
     <<"Content-Type">> => <<"application/json">>,

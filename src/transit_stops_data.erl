@@ -1,7 +1,8 @@
 -module(transit_stops_data).
 -export([
   insert_to_table/2,
-  load_from_file/1
+  load_from_file/1,
+  make_table/0
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -9,17 +10,18 @@
 -include("records/coords.hrl").
 -include("records/stop.hrl").
 
+make_table() ->
+  ets:new(stops, [{keypos, #stop.id}]).
+
 load_from_file(GtfsBasedir) ->
-  StopsFilename = case application:get_application() of
-                    {ok, AppName} ->
-                      code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt";
-                    _ ->
-                      "./priv/" ++ GtfsBasedir ++ "/stops.txt"
-                  end,
-  io:fwrite("Loading stops from ~s~n", [StopsFilename]),
-  {ok, StopsDataBinary} = file:read_file(StopsFilename),
-  StopsDataBinaryList = binary:split(StopsDataBinary, <<$\n>>, [global]),
-  [fileline_to_stop(B) || B <- select_stop_lines(StopsDataBinaryList)].
+  Filename = case application:get_application() of
+               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt";
+               _ -> "./priv/" ++ GtfsBasedir ++ "/stops.txt"
+             end,
+  io:fwrite("Loading stops from ~s~n", [Filename]),
+  {ok, DataBinary} = file:read_file(Filename),
+  DataBinaryList = binary:split(DataBinary, <<$\n>>, [global]),
+  [fileline_to_stop(B) || B <- select_good_lines(DataBinaryList)].
 
 load_from_file_test() ->
   Stops = load_from_file(?GTFS_BASEDIR),
@@ -38,7 +40,7 @@ insert_to_table([Stop|StopRest], StopsTableId) ->
   insert_to_table(StopRest, StopsTableId);
 insert_to_table([], _StopsTableId) -> ok.
 
-select_stop_lines(StopsDataBinaryList) ->
+select_good_lines(StopsDataBinaryList) ->
   % skip the header
   HeaderlessList = lists:nthtail(1, StopsDataBinaryList),
   % skip empty lines

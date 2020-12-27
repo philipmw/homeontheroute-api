@@ -1,8 +1,3 @@
-%%%-------------------------------------------------------------------
-%% @doc homeontheroute top level supervisor.
-%% @end
-%%%-------------------------------------------------------------------
-
 -module(homeontheroute_sup).
 
 -behaviour(supervisor).
@@ -15,18 +10,9 @@
 
 -define(SERVER, ?MODULE).
 
-%%====================================================================
-%% API functions
-%%====================================================================
-
 start_link(TransitTableId) ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, [TransitTableId]).
 
-%%====================================================================
-%% Supervisor callbacks
-%%====================================================================
-
-%% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init(TransitTableId) ->
   {ok,
     {
@@ -50,7 +36,3 @@ init(TransitTableId) ->
       ]
     }
   }.
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
