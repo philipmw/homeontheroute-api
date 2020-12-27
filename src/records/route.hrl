@@ -3,7 +3,8 @@
 
 -record(route, {
   id,
-  short_name
+  short_name,
+  desc
 }).
 
 -endif.

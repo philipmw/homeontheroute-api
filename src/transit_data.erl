@@ -14,14 +14,23 @@
 create_all_ets() ->
   TopTableId = ets:new(transit_data_top, [named_table]),
   ets:insert(TopTableId, {stops, create_stops_ets(TopTableId)}),
+  ets:insert(TopTableId, {routes, create_routes_ets(TopTableId)}),
   TopTableId.
 
 create_stops_ets(_) ->
   io:fwrite("Creating Stops table~n"),
   TableId = ets:new(stops, [{keypos, #stop.id}]),
-  Stops = transit_stops_data:load_stops_from_file(?GTFS_BASEDIR),
-  ok = transit_stops_data:insert_stops_to_table(Stops, TableId),
-  io:fwrite("Ok, loaded ~B stops into ETS table ID ~w~n", [lists:flatlength(Stops), TableId]),
+  Stops = transit_stops_data:load_from_file(?GTFS_BASEDIR),
+  ok = transit_stops_data:insert_to_table(Stops, TableId),
+  io:fwrite("Loaded ~B stops into ETS table ID ~w~n", [lists:flatlength(Stops), TableId]),
+  TableId.
+
+create_routes_ets(_) ->
+  io:fwrite("Creating Routes table~n"),
+  TableId = ets:new(routes, []),
+  Routes = transit_routes_data:load_from_file(?GTFS_BASEDIR),
+  ok = transit_routes_data:insert_to_table(Routes, TableId),
+  io:fwrite("Loaded ~B routes into ETS table ID ~w~n", [lists:flatlength(Routes), TableId]),
   TableId.
 
 % `ets_map` passes each item from the ETS table to a user-specified function.
