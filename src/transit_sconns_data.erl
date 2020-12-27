@@ -25,8 +25,8 @@ segment_to_sconn(Segment, RouteTableId, TripTableId) ->
     from_stop_id = Segment#segment.from_stop_id,
     to_stop_id = Segment#segment.to_stop_id,
     transit_mode = Route#route.short_name,
-    wait_mins = fixme,
-    travel_mins = Segment#segment.travel_secs / 60
+    wait_secs = 60*5, % FIXME
+    travel_secs = Segment#segment.travel_secs
   }.
 
 route_of_trip_id(RouteTableId, TripTableId, TripId) ->
@@ -59,8 +59,8 @@ assemble_test() ->
     from_stop_id = "stop-A",
     to_stop_id = "stop-B",
     transit_mode = <<"route short name">>,
-    wait_mins = 5,
-    travel_mins = 1.5
+    wait_secs = 0, % FIXME
+    travel_secs = 90
   }], assemble(RouteTableId, SegmentTableId, TripTableId)).
 
 insert_to_table([Sconn|Rest], TableId) ->

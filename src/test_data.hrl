@@ -52,39 +52,39 @@
   from_stop_id=stopA,
   to_stop_id=stopB,
   transit_mode=routeRed,
-  wait_mins=10,
-  travel_mins=4}).
+  wait_secs=60*10,
+  travel_secs=60*4}).
 
 % Yellow line
 -define(TEST_SCONN_YELLOW_B_C, #sconn{
   from_stop_id=stopB,
   to_stop_id=stopC,
   transit_mode=routeYellow,
-  wait_mins=5,
-  travel_mins=3}).
+  wait_secs=60*5,
+  travel_secs=60*3}).
 -define(TEST_SCONN_YELLOW_C_D, #sconn{
   from_stop_id=stopC,
   to_stop_id=stopD,
   transit_mode=routeYellow,
-  wait_mins=5,
-  travel_mins=3}).
+  wait_secs=60*5,
+  travel_secs=60*3}).
 -define(TEST_SCONN_YELLOW_D_E, #sconn{
   from_stop_id=stopD,
   to_stop_id=stopE,
   transit_mode=routeYellow,
-  wait_mins=5,
-  travel_mins=3}).
+  wait_secs=60*5,
+  travel_secs=60*3}).
 -define(TEST_SCONN_YELLOW_E_F, #sconn{
   from_stop_id=stopE,
   to_stop_id=stopF,
   transit_mode=routeYellow,
-  wait_mins=5,
-  travel_mins=3}).
+  wait_secs=60*5,
+  travel_secs=60*3}).
 
 % Green line
 -define(TEST_SCONN_GREEN_C_F, #sconn{
   from_stop_id=stopC,
   to_stop_id=stopF,
   transit_mode=routeGreen,
-  wait_mins=3,
-  travel_mins=3}).
+  wait_secs=60*3,
+  travel_secs=60*3}).

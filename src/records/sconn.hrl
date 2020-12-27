@@ -5,8 +5,8 @@
   from_stop_id,
   to_stop_id,
   transit_mode,
-  wait_mins,
-  travel_mins
+  wait_secs,
+  travel_secs
 }).
 
 -type sconn() :: #sconn{}.

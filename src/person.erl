@@ -1,18 +1,18 @@
 -module(person).
 -export([
-  direct_walk_mins/2
+  direct_walk_secs/2
 ]).
 
 -include("person.hrl").
 -include("test_data.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-direct_walk_mins(StopA, StopB) ->
+direct_walk_secs(StopA, StopB) ->
   Meters = earth:meters_between_stops(StopA, StopB),
-  Meters / ?WALK_METERS_PER_MIN.
+  Meters / ?WALK_METERS_PER_SEC.
 
-direct_walk_mins_test() ->
+direct_walk_secs_test() ->
   ?assertMatch(
-    Distance when Distance > 7 andalso Distance < 8,
-      direct_walk_mins(?TEST_STOP_B, ?TEST_STOP_C)).
+    Secs when Secs > 60*7 andalso Secs < 60*8,
+      direct_walk_secs(?TEST_STOP_B, ?TEST_STOP_C)).
 

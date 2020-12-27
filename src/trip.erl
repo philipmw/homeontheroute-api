@@ -1,5 +1,8 @@
 -module(trip).
--export([optimal_trip_between_coords/3, total_walk_mins/1]).
+-export([
+  optimal_trip_between_coords/3,
+  optimal_trip_to_stop/3,
+  total_walk_secs/1]).
 
 -include("records/sconn.hrl").
 -include("records/stop.hrl").
@@ -24,28 +27,28 @@ min_by_test() ->
   MinElem = min_by([3, 2, 1, 2, 3], fun(X) -> X*2 end),
   ?assertEqual(1, MinElem).
 
-% At a stop, the cost of switching from transit mode A to B, expressed in Wait minutes.
-mins_of_mode_switch(_ModeA, _ModeA, _W) -> 0; % no switch
-mins_of_mode_switch(_ModeA, walk, _W) -> 0; % get off the bus and walk
-mins_of_mode_switch(walk, _ModeB, W) -> W; % get on the bus X
-mins_of_mode_switch(_ModeA, _ModeB, W) -> W. % transfer to bus X
+% At a stop, the cost of switching from transit mode A to B, expressed in Wait seconds.
+secs_of_mode_switch(_ModeA, _ModeA, _W) -> 0; % no switch
+secs_of_mode_switch(_ModeA, walk, _W) -> 0; % get off the bus and walk
+secs_of_mode_switch(walk, _ModeB, W) -> W; % get on the bus X
+secs_of_mode_switch(_ModeA, _ModeB, W) -> W. % transfer to bus X
 
-mins_of_mode_switch_test() ->
+secs_of_mode_switch_test() ->
   ?assertEqual(
     3,
-    mins_of_mode_switch(routeBC, routeCD, 3)
+    secs_of_mode_switch(routeBC, routeCD, 3)
   ).
 
-total_walk_mins(Trip) -> total_walk_mins(Trip, 0).
+total_walk_secs(Trip) -> total_walk_secs(Trip, 0).
 
-total_walk_mins([], Mins) -> Mins;
-total_walk_mins([{_WaitMins, walk, WalkMins, _ToStop}|Rest], WalkedMinsSoFar) ->
-  total_walk_mins(Rest, WalkedMinsSoFar+WalkMins);
-total_walk_mins([{_WaitMins, _TransitMode, _TravelMins, _ToStop}|Rest], WalkedMinsSoFar) ->
-  total_walk_mins(Rest, WalkedMinsSoFar).
+total_walk_secs([], Mins) -> Mins;
+total_walk_secs([{_WaitSecs, walk, WalkSecs, _ToStop}|Rest], WalkedSecsSoFar) ->
+  total_walk_secs(Rest, WalkedSecsSoFar+WalkSecs);
+total_walk_secs([{_WaitSecs, _TransitMode, _TravelSecs, _ToStop}|Rest], WalkedSecsSoFar) ->
+  total_walk_secs(Rest, WalkedSecsSoFar).
 
-total_walk_mins_test() ->
-  ?assertMatch(8, total_walk_mins([
+total_walk_secs_test() ->
+  ?assertMatch(8, total_walk_secs([
     {0, walk, 5, stopA},
     {4, someBus, 10, stopB},
     {0, walk, 3, stopC}
@@ -73,12 +76,12 @@ trip_test_connections_from_stop_2(Tabs) ->
 
 % Returns a list in the format:
 %   [ {StopAId, MetersDistance}, {StopBId, MetersDistance}, ... ]
-stops_walkable_from_coords(StopsTab, FromCoords, MaxWalkMinsAllowed) ->
+stops_walkable_from_coords(StopsTab, FromCoords, MaxWalkSecsAllowed) ->
   Distances = transit_data:ets_map(StopsTab, fun(StopX) ->
     {StopX, earth:meters_between_coords(FromCoords, StopX#stop.coords)} end),
   lists:filter(
     fun({_StopX, MetersAway}) ->
-      (MetersAway < MaxWalkMinsAllowed*?WALK_METERS_PER_MIN)
+      (MetersAway < MaxWalkSecsAllowed*?WALK_METERS_PER_SEC)
     end,
     Distances).
 
@@ -92,50 +95,49 @@ trip_test_stops_walkable_from_coords(Tabs) ->
       {?TEST_STOP_A, DistanceA}
     ] when DistanceA > 111 andalso DistanceA < 112
       andalso DistanceB > 778 andalso DistanceB < 779,
-      stops_walkable_from_coords(StopsTab, #coords{lat=47, lon=-122}, ?MAX_WALK_MINS_TO_FIRST_STOP)
+      stops_walkable_from_coords(StopsTab, #coords{lat=47, lon=-122}, ?MAX_WALK_SECS_TO_NEXT_STOP)
   ).
 
 % All stops surrounding the input stop, excluding the given set of stops.
 % Returns a list in the format:
 %   [ {StopAId, MetersDistance}, {StopBId, MetersDistance}, ... ]
-stops_walkable_from_stop(StopsTab, FromStopId, StopIdsExcluded, MaxWalkMinsAllowed) ->
+stops_walkable_from_stop(StopsTab, FromStopId, StopIdsExcluded, MaxWalkSecsAllowed) ->
   [FromStop] = transit_data:stop(StopsTab, [FromStopId]),
   lists:filter(
     fun({StopX, _}) ->
       (not sets:is_element(StopX#stop.id, StopIdsExcluded))
     end,
-    stops_walkable_from_coords(StopsTab, FromStop#stop.coords, MaxWalkMinsAllowed)).
+    stops_walkable_from_coords(StopsTab, FromStop#stop.coords, MaxWalkSecsAllowed)).
 
 trip_test_stops_walkable_from_stop(Tabs) ->
   [{stops, StopsTab}] = ets:lookup(Tabs, stops),
   ?assertMatch(
     [{?TEST_STOP_B, Distance}] when Distance > 667 andalso Distance < 668,
-      stops_walkable_from_stop(StopsTab, stopA, sets:from_list([stopA]), ?MAX_WALK_MINS_TO_FIRST_STOP)
+      stops_walkable_from_stop(StopsTab, stopA, sets:from_list([stopA]), ?MAX_WALK_SECS_TO_NEXT_STOP)
   ).
 
--spec total_mins([{number(), _, number(), _}]) -> number().
-total_mins(Routes) -> lists:foldl(
-  fun ({ModeSwitchMins, _TM, TransitMins, _StopB}, AccIn) -> ModeSwitchMins + TransitMins + AccIn end,
+-spec total_secs([{number(), _, number(), _}]) -> number().
+total_secs(Routes) -> lists:foldl(
+  fun ({ModeSwitchSecs, _TM, TransitSecs, _StopB}, AccIn) -> ModeSwitchSecs + TransitSecs + AccIn end,
   0,
   Routes
 ).
 
-total_mins_test() ->
-  Mins = total_mins([
+total_secs_test() ->
+  ?assertEqual(13, total_secs([
     {0, walk, 5, stopA},
     {5, route5, 3, stopB}
-  ]),
-  ?assertEqual(13, Mins).
+  ])).
 
 dbgindent(QtyStopsVisited) ->
   string:chars($., 3*QtyStopsVisited).
 
-segs_walked_total_mins(L) -> segs_walked_total_mins(L, 0).
-segs_walked_total_mins([], Sum) -> Sum;
-segs_walked_total_mins([{T1, walk, T2, _}|Tail], Sum) ->
-  segs_walked_total_mins(Tail, Sum + T1 + T2);
-segs_walked_total_mins([_|Tail], Sum) ->
-  segs_walked_total_mins(Tail, Sum).
+segs_walked_total_secs(L) -> segs_walked_total_secs(L, 0).
+segs_walked_total_secs([], Sum) -> Sum;
+segs_walked_total_secs([{T1, walk, T2, _}|Tail], Sum) ->
+  segs_walked_total_secs(Tail, Sum + T1 + T2);
+segs_walked_total_secs([_|Tail], Sum) ->
+  segs_walked_total_secs(Tail, Sum).
 
 segs_stop_ids(L) -> segs_stop_ids(L, sets:new()).
 segs_stop_ids([], StopsVisited) -> StopsVisited;
@@ -149,7 +151,7 @@ segs_stop_ids([{_, _, _, StopId}|Tail], StopsVisited) ->
 % The function requires at least one initial segment.
 %
 % A travel segment is a 4-tuple:
-%   {<mode-switch-or-wait-mins>, <transit-mode>, <transit-time>, <to-stop-X>}
+%   {<mode-switch-or-wait-secs>, <transit-mode>, <transit-secs>, <to-stop-X>}
 %
 % Transit modes: walk | RouteId
 %
@@ -176,14 +178,14 @@ optimal_trip_to_stop(Tabs, InitSegs, StopZId) ->
   io:fwrite("~soptimal_trip_to_stop(~w, ~w) invoked...~n",
     [dbgindent(length(InitSegs)), InitSegs, StopZId]),
 
-  WalkedMins = segs_walked_total_mins(InitSegs),
+  WalkedSecs = segs_walked_total_secs(InitSegs),
   StopsVisited = segs_stop_ids(InitSegs),
   {_, TransitModeToA, _, StopAId} = lists:last(InitSegs),
 
   [{stops, StopsTab}] = ets:lookup(Tabs, stops),
   [{sconns, SConnsTab}] = ets:lookup(Tabs, sconns),
 
-  MaxWalkMinsAllowed = ?MAX_WALK_MINS_TO_FIRST_STOP - WalkedMins,
+  MaxWalkSecsAllowed = ?MAX_WALK_SECS_TO_NEXT_STOP - WalkedSecs,
 
   % Now suppose we have a set of Stops B, reachable from stop A via some transit-mode.
 
@@ -201,9 +203,9 @@ optimal_trip_to_stop(Tabs, InitSegs, StopZId) ->
     optimal_trip_to_stop(
       Tabs,
       InitSegs ++ [{
-        mins_of_mode_switch(TransitModeToA, SConn#sconn.transit_mode, SConn#sconn.wait_mins),
+        secs_of_mode_switch(TransitModeToA, SConn#sconn.transit_mode, SConn#sconn.wait_secs),
         SConn#sconn.transit_mode,
-        SConn#sconn.travel_mins,
+        SConn#sconn.travel_secs,
         SConn#sconn.to_stop_id}],
       StopZId) ||
     SConn <- connections_from_stop(SConnsTab, StopAId, sets:add_element(StopAId, StopsVisited))
@@ -214,12 +216,12 @@ optimal_trip_to_stop(Tabs, InitSegs, StopZId) ->
     optimal_trip_to_stop(
       Tabs,
       InitSegs ++ [{
-        mins_of_mode_switch(TransitModeToA, walk, 0),
+        secs_of_mode_switch(TransitModeToA, walk, 0),
         walk,
-        DistanceAB / ?WALK_METERS_PER_MIN, % travel mins
+        DistanceAB / ?WALK_METERS_PER_SEC, % travel time in seconds
         StopB#stop.id}],
       StopZId) ||
-    {StopB, DistanceAB} <- stops_walkable_from_stop(StopsTab, StopAId, sets:add_element(StopAId, StopsVisited), MaxWalkMinsAllowed)
+    {StopB, DistanceAB} <- stops_walkable_from_stop(StopsTab, StopAId, sets:add_element(StopAId, StopsVisited), MaxWalkSecsAllowed)
   ],
   io:fwrite("~sTripsWalkingToB: ~w~n", [dbgindent(length(InitSegs)), TripsWalkingToB]),
 
@@ -228,14 +230,14 @@ optimal_trip_to_stop(Tabs, InitSegs, StopZId) ->
   DirectWalkTrip =
     if StopAId /= StopZId ->
       [StopA, StopZ] = transit_data:stop(StopsTab, [StopAId, StopZId]),
-      InitSegs ++ [{0, walk, person:direct_walk_mins(StopA, StopZ), StopZId}];
+      InitSegs ++ [{0, walk, person:direct_walk_secs(StopA, StopZ), StopZId}];
       true -> InitSegs end,
   io:fwrite("~sDirectWalkTrip: ~w~n", [dbgindent(length(InitSegs)), DirectWalkTrip]),
 
   AllPossibleTrips = TripsRidingThruStopB ++ TripsWalkingToB ++ [DirectWalkTrip],
   io:fwrite("~sAllPossibleTrips: ~w~n", [dbgindent(length(InitSegs)), AllPossibleTrips]),
 
-  OptimalTrip = min_by(AllPossibleTrips, fun total_mins/1),
+  OptimalTrip = min_by(AllPossibleTrips, fun total_secs/1),
   io:fwrite("~soptimal_trip_to_stop(~w, ~w) => ~w~n",
     [dbgindent(length(InitSegs)), InitSegs, StopZId, OptimalTrip]),
   OptimalTrip.
@@ -244,8 +246,8 @@ trip_test_optimal_trip_to_stop_AB(Tabs) ->
   ?assertMatch(
     [
       {0, walk, 0, stopA},
-      {0, walk, WalkTime, stopB}
-    ] when WalkTime > 7 andalso WalkTime < 8,
+      {0, walk, WalkSecs, stopB}
+    ] when WalkSecs > 60*7 andalso WalkSecs < 60*8,
       optimal_trip_to_stop(Tabs, [{0, walk, 0, stopA}], stopB)
   ).
 
@@ -254,10 +256,10 @@ trip_test_optimal_trip_to_stop_AD(Tabs) ->
     [
       % too tired to walk the whole way, so we'll catch the Yellow Line two stops
       {0, walk, 0, stopA},
-      {0, walk, WalkTime, stopB},
-      {5, routeYellow, 3, stopC},
-      {0, routeYellow, 3, stopD}
-    ] when WalkTime > 7 andalso WalkTime < 8,
+      {0, walk, WalkSecs, stopB},
+      {60*5, routeYellow, 60*3, stopC},
+      {0, routeYellow, 60*3, stopD}
+    ] when WalkSecs > 60*7 andalso WalkSecs < 60*8,
       optimal_trip_to_stop(Tabs, [{0, walk, 0, stopA}], stopD)
   ).
 
@@ -265,10 +267,10 @@ trip_test_optimal_trip_to_stop_AF(Tabs) ->
   ?assertMatch(
     [
       {0, walk, 0, stopA},
-      {0, walk, WalkTime, stopB},
-      {5, routeYellow, 3, stopC},
-      {3, routeGreen, 3, stopF}
-    ] when WalkTime > 7 andalso WalkTime < 8,
+      {0, walk, WalkSecs, stopB},
+      {60*5, routeYellow, 60*3, stopC},
+      {60*3, routeGreen, 60*3, stopF}
+    ] when WalkSecs > 60*7 andalso WalkSecs < 60*8,
       optimal_trip_to_stop(Tabs, [{0, walk, 0, stopA}], stopF)
   ).
 
@@ -276,11 +278,12 @@ trip_test_optimal_trip_to_stop_AZ(Tabs) ->
   ?assertMatch(
     [
       {0, walk, 0, stopA},
-      {0, walk, WalkTimeAB, stopB},
-      {5, routeYellow, 3, stopC},
-      {3, routeGreen, 3, stopF},
-      {0, walk, WalkTimeFZ, stopZ}
-    ] when WalkTimeAB > 7 andalso WalkTimeAB < 8 andalso WalkTimeFZ > 60 andalso WalkTimeFZ < 61,
+      {0, walk, WalkSecsAB, stopB},
+      {60*5, routeYellow, 60*3, stopC},
+      {60*3, routeGreen, 60*3, stopF},
+      {0, walk, WalkSecsFZ, stopZ}
+    ] when WalkSecsAB > 60*7 andalso WalkSecsAB < 60*8 andalso
+      WalkSecsFZ > 60*60 andalso WalkSecsFZ < 60*61,
       optimal_trip_to_stop(Tabs, [{0, walk, 0, stopA}], stopZ)
   ).
 
@@ -292,22 +295,22 @@ optimal_trip_between_coords(Tabs, FromCoords, ToCoords) ->
   %   find the optimal route.
   % Return the time of the fastest optimal route.
   [{stops, StopsTab}] = ets:lookup(Tabs, stops),
-  FromStops = stops_walkable_from_coords(StopsTab, FromCoords, ?MAX_WALK_MINS_TO_FIRST_STOP),
-  ToStops = stops_walkable_from_coords(StopsTab, ToCoords, ?MAX_WALK_MINS_TO_FIRST_STOP),
+  FromStops = stops_walkable_from_coords(StopsTab, FromCoords, ?MAX_WALK_SECS_TO_NEXT_STOP),
+  ToStops = stops_walkable_from_coords(StopsTab, ToCoords, ?MAX_WALK_SECS_TO_NEXT_STOP),
   io:fwrite("optimal_trip_between_coords: FromStops=~w ToStops=~w~n", [FromStops, ToStops]),
 
   OptimalRoutes = [ optimal_trip_to_stop(
         Tabs,
-        [{0, walk, FromStopMeters / ?WALK_METERS_PER_MIN, FromStop#stop.id}],
+        [{0, walk, FromStopMeters / ?WALK_METERS_PER_SEC, FromStop#stop.id}],
         ToStop#stop.id
       ) ++ [
-        {0, walk, earth:meters_between_coords(ToStop#stop.coords, ToCoords) / ?WALK_METERS_PER_MIN, to_dest_coords}
+        {0, walk, earth:meters_between_coords(ToStop#stop.coords, ToCoords) / ?WALK_METERS_PER_SEC, to_dest_coords}
       ] ||
     {FromStop, FromStopMeters} <- FromStops,
     {ToStop, _ToStopMeters} <- ToStops
   ],
   io:fwrite("OptimalRoutes: ~w~n", [OptimalRoutes]),
-  min_by(OptimalRoutes, fun(Route) -> total_mins(Route) end).
+  min_by(OptimalRoutes, fun total_secs/1).
 
 trip_test_optimal_trip_between_coords(Tabs) ->
   FromCoords = #coords{lat=47, lon=-122}, % a little farther to stop B than stop A
@@ -318,12 +321,12 @@ trip_test_optimal_trip_between_coords(Tabs) ->
   % walk to stop B, wait 5 minutes for yellow route, then take it to stop E.
   ?assertMatch(
     [
-      {0, walk, WalkTimeToB, stopB},
-      {5, routeYellow, 3, stopC},
-      {3, routeGreen, 3, stopF},
-      {0, walk, WalkTimeFromF, to_dest_coords}
-    ] when WalkTimeToB > 9 andalso WalkTimeToB < 10
-      andalso WalkTimeFromF > 1 andalso WalkTimeFromF < 2, Trip).
+      {0, walk, WalkSecsToB, stopB},
+      {60*5, routeYellow, 60*3, stopC},
+      {60*3, routeGreen, 60*3, stopF},
+      {0, walk, WalkSecsFromF, to_dest_coords}
+    ] when WalkSecsToB > 60*9 andalso WalkSecsToB < 60*10
+      andalso WalkSecsFromF > 60*1 andalso WalkSecsFromF < 60*2, Trip).
 
 %%%%%%%%%
 % TESTING
