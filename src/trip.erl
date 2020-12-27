@@ -1,5 +1,5 @@
 -module(trip).
--export([total_walk_mins/1]).
+-export([optimal_trip_between_coords/3, total_walk_mins/1]).
 
 -include("records/sconn.hrl").
 -include("records/stop.hrl").

@@ -100,9 +100,7 @@ As needed:
 
 And look for this output:
 
-    =PROGRESS REPORT==== 3-Mar-2017::19:08:02 ===
-             application: homeontheroute
-              started_at: nonode@nohost
+    ===> Booted homeontheroute
 
 If it fails to start: did you add your own GTFS data?
 

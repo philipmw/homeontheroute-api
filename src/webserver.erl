@@ -2,13 +2,13 @@
 % to be a supervised worker, and the `supervision` OTP concept/module.
 
 -module(webserver).
--export([start/0, loop/0]).
+-export([start/1, loop/0]).
 
-start() ->
+start(TransitTableId) ->
   Dispatch = cowboy_router:compile([
     {'_', [
       {"/", hello_handler, []},
-      {"/stops", stops_handler, []},
+      {"/stops", stops_handler, TransitTableId},
       {"/transitscore-pins", transitscore_handler, []}
     ]}
   ]),

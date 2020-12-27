@@ -15,8 +15,8 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
-  transit_data:create_all_ets(),
-  homeontheroute_sup:start_link().
+  TransitTableId = transit_data:create_all_ets(),
+  homeontheroute_sup:start_link(TransitTableId).
 
 %%--------------------------------------------------------------------
 stop(_State) ->

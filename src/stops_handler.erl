@@ -1,6 +1,6 @@
 -module(stops_handler).
 
--behaviour(cowboy_http_handler).
+-behaviour(cowboy_handler).
 
 -export([init/2]).
 
@@ -8,15 +8,16 @@
 -include("./records/coords.hrl").
 -include("./records/stop.hrl").
 
-init(Req, _State) ->
+init(Req, TransitTableId) ->
   ok = gen_server:cast(visitor_counter, newvisitor),
-  Stops = ets:foldl(fun (E, A) -> A ++ [stop_to_ejson(E)] end, [], transit_stops),
+  {stops, StopsTableId} = lists:nth(1, ets:lookup(TransitTableId, stops)),
+  Stops = ets:foldl(fun (E, A) -> A ++ [stop_to_ejson(E)] end, [], StopsTableId),
   Req2 = cowboy_req:reply(200, #{
     <<"Content-Type">> => <<"application/json">>,
     <<"Access-Control-Allow-Origin">> => <<"*">>
   }, jsone:encode(Stops),
     Req),
-  {ok, Req2, _State}.
+  {ok, Req2, TransitTableId}.
 
 stop_to_ejson(StopRec) ->
   [

@@ -1,6 +1,6 @@
 -module(transitscore_handler).
 
--behaviour(cowboy_http_handler).
+-behaviour(cowboy_handler).
 
 -export([init/2]).
 
