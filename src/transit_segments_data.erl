@@ -197,13 +197,8 @@ convert_stop_times_to_segments_bad_seq_test() ->
 
 parallel_convert_stop_times_to_segments(MapByTripId) ->
   lists:flatten(
-    parmap(fun convert_stop_times_to_segments/1, maps:values(MapByTripId))
+    parallel:parmap(fun convert_stop_times_to_segments/1, maps:values(MapByTripId))
   ).
-
-parmap(F, L) ->
-  Parent = self(),
-  [receive {Pid, Result} -> Result end ||
-    Pid <- [spawn_link(fun() -> Parent ! {self(), F(X)} end) || X <- L]].
 
 parallel_convert_stop_times_to_segments_test() ->
   ?assertEqual([

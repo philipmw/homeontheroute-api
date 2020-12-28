@@ -106,6 +106,11 @@ If it fails to start: did you add your own GTFS data?
 
 This is all you need for complete local development.
 
+Now in the shell you can run something like:
+
+    TransitTable = ets:whereis(transit_data_top).
+    trip:optimal_trip_to_stop({trip_config, TransitTable, <<"26860">>, 1}, [{0, walk, 1, <<"18455">>}]).
+
 Now try http://localhost:8080/stops -- it should work!
 
 ## Quit the shell

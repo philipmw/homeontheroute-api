@@ -1,0 +1,4 @@
+-record(cachereq, {
+  key,
+  missFn
+}).
