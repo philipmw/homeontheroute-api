@@ -17,6 +17,9 @@ setup_transit_data() ->
   ets:insert(StopsTableId, ?TEST_STOP_D),
   ets:insert(StopsTableId, ?TEST_STOP_E),
   ets:insert(StopsTableId, ?TEST_STOP_F),
+  ets:insert(StopsTableId, ?TEST_STOP_G),
+  ets:insert(StopsTableId, ?TEST_STOP_H),
+  ets:insert(StopsTableId, ?TEST_STOP_I),
   ets:insert(StopsTableId, ?TEST_STOP_Z),
   io:fwrite("Inserted test stops data into ~w~n", [StopsTableId]),
 
@@ -28,6 +31,12 @@ setup_transit_data() ->
   ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_D_E),
   ets:insert(SConnsTableId, ?TEST_SCONN_YELLOW_E_F),
   ets:insert(SConnsTableId, ?TEST_SCONN_GREEN_C_F),
+  ets:insert(SConnsTableId, ?TEST_SCONN_BLUE_Z_F),
+  ets:insert(SConnsTableId, ?TEST_SCONN_BLUE_F_E),
+  ets:insert(SConnsTableId, ?TEST_SCONN_BLUE_E_G),
+  ets:insert(SConnsTableId, ?TEST_SCONN_BLUE_G_H),
+  ets:insert(SConnsTableId, ?TEST_SCONN_BLUE_H_I),
+  ets:insert(SConnsTableId, ?TEST_SCONN_BLUE_I_B),
   io:fwrite("Inserted test stops connections data into ~w~n", [SConnsTableId]),
 
   TablesTableId.

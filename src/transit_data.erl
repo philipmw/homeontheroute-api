@@ -81,7 +81,7 @@ ets_map(Tab, Fun, Mapped, Key, [Value]) ->
 transit_data_test_ets_map(Tabs) ->
   [{stops, StopsTab}] = ets:lookup(Tabs, stops),
   Mapped = ets_map(StopsTab, fun(_X) -> 1 end),
-  ?assertEqual(7, lists:sum(Mapped)).
+  ?assertEqual(10, lists:sum(Mapped)).
 
 % Map stop IDs to stop records.  This assumes that the ETS table is a set!
 stop(StopsTab, StopIds) ->
