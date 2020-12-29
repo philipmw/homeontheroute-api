@@ -167,6 +167,8 @@ dbgindent(QtyStopsVisited) ->
   io_lib:format("(~B stops visited) ", [QtyStopsVisited]).
 %%  string:chars($., 3*QtyStopsVisited).
 
+segs_walked(L) -> lists:filter(fun({_, Mode, _, _}) -> Mode == walk end, L).
+
 segs_walked_total_secs(L) -> segs_walked_total_secs(L, 0).
 segs_walked_total_secs([], Sum) -> Sum;
 segs_walked_total_secs([{T1, walk, T2, _}|Tail], Sum) ->
@@ -240,12 +242,14 @@ optimal_trip_to_stop(TripConfig, InitSegs) ->
 
   {_, TransitModeToA, _, StopAId} = lists:last(InitSegs),
 
+  WalkingSegmentsQty = length(segs_walked(InitSegs)),
   TotalTripSecs = segs_total_secs(InitSegs),
   WalkedSecs = segs_walked_total_secs(InitSegs),
   StopIdsVisited = segs_stop_ids(InitSegs),
   TransfersQty = segs_transfers(InitSegs),
 
-  CanContinueTrip = TotalTripSecs < TripConfig#trip_config.totalSecsAllowed,
+  % optimizations
+  CanContinueTrip = TotalTripSecs < TripConfig#trip_config.totalSecsAllowed andalso WalkingSegmentsQty =< (TransfersQty+2),
   CanTransfer = TransfersQty < TripConfig#trip_config.totalTxfrAllowed,
 
   if TripConfig#trip_config.log /= undefined ->
@@ -378,7 +382,7 @@ trip_test_optimal_trip_to_stop_AB(Tabs) ->
         {0, walk, 0, stopA},
         {0, walk, WalkSecs, stopB}
       ],
-      fnInstQty = 34
+      fnInstQty = 21
     } when WalkSecs > 60*7 andalso WalkSecs < 60*8,
       optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopB, totalTxfrAllowed = 2},
@@ -394,7 +398,7 @@ trip_test_optimal_trip_to_stop_AD(Tabs) ->
         {60*3, routeYellow, 60*3, stopC},
         {0, routeYellow, 60*3, stopD}
       ],
-      fnInstQty = 34
+      fnInstQty = 21
     } when WalkSecs > 60*7 andalso WalkSecs < 60*8,
       optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopD, totalTxfrAllowed = 2},
@@ -409,7 +413,7 @@ trip_test_optimal_trip_to_stop_AF(Tabs) ->
         {60*3, routeYellow, 60*3, stopC},
         {60*3, routeGreen, 60*3, stopF}
       ],
-      fnInstQty = 34
+      fnInstQty = 21
     } when WalkSecs > 60*7 andalso WalkSecs < 60*8,
       optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopF, totalTxfrAllowed = 2},
@@ -425,7 +429,7 @@ trip_test_optimal_trip_to_stop_AZ(Tabs) ->
         {60*3, routeGreen, 60*3, stopF},
         {0, walk, WalkSecsFZ, stopZ}
       ],
-      fnInstQty = 119
+      fnInstQty = 108
     } when WalkSecsAB > 60*7 andalso WalkSecsAB < 60*8 andalso
       WalkSecsFZ > 60*60 andalso WalkSecsFZ < 60*61,
       optimal_trip_to_stop(
@@ -438,13 +442,14 @@ trip_test_optimal_trip_to_stop_AZ_limitedTxfr(Tabs) ->
       optimalTrip = [
         {0, walk, 0, stopA},
         {0, walk, WalkSecsAB, stopB},
-        {0, walk, WalkSecsBC, stopC},
-        {60*3, routeGreen, 60*3, stopF},
+        {60*3, routeYellow, 60*3, stopC},
+        {0, routeYellow, 60*3, stopD},
+        {0, routeYellow, 60*3, stopE},
+        {0, routeYellow, 60*3, stopF},
         {0, walk, WalkSecsFZ, stopZ}
       ],
-      fnInstQty = 12
+      fnInstQty = 8
     } when WalkSecsAB > 60*7 andalso WalkSecsAB < 60*8 andalso
-      WalkSecsBC > 60*7 andalso WalkSecsBC < 60*8 andalso
       WalkSecsFZ > 60*60 andalso WalkSecsFZ < 60*61,
       optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopZ, totalSecsAllowed = 10000, totalTxfrAllowed = 1},
