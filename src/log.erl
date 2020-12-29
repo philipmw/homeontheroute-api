@@ -14,12 +14,16 @@ num_records(Log, Cont0, Qty) ->
 key_of_log_entry({
   optimal_trip_to_stop,
   invoked,
+  {initSegs, _},
   {transitModeToA, TMToA},
   {stopAID, StopAId},
   {stopZID, StopZId},
+  {totalTripSecs, _},
   {walkedSecs, _},
-  {stopsVisited, _},
-  {transfersQty, _}
+  {stopIdsVisited, _},
+  {transfersQty, _},
+  {canContinueTrip, _},
+  {canTransfer, _}
 }) -> {TMToA, StopAId, StopZId}.
 
 unique_queries(Log) ->

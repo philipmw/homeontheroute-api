@@ -17,17 +17,41 @@ make_table() ->
 
 assemble(RouteTableId, SegmentTableId, TripTableId) ->
   Segments = ets:select(SegmentTableId, [{'_', [], ['$_']}]),
-  lists:map(fun(Seg) -> segment_to_sconn(Seg, RouteTableId, TripTableId) end, Segments).
+  % We have many segments for a given (route, from-stop, to-stop), for example
+  % 210 segments for route 62 traveling between 18540 and 18550.
+  % What differs is arrival, departure, and travel time.
+  % We need to aggregate them into a single Sconn.
 
-segment_to_sconn(Segment, RouteTableId, TripTableId) ->
-  Route = route_of_trip_id(RouteTableId, TripTableId, Segment#segment.trip_id),
-  #sconn{
-    from_stop_id = Segment#segment.from_stop_id,
-    to_stop_id = Segment#segment.to_stop_id,
-    transit_mode = Route#route.short_name,
-    wait_secs = 60*5, % FIXME
-    travel_secs = Segment#segment.travel_secs
-  }.
+  % Create a map from the (route, from-stop, to-stop) tuple to the segments,
+  % so we can easily aggregate the values.
+  SegmentsMap = lists:foldl(
+    fun(Segment, SegmentsMap) ->
+      Route = route_of_trip_id(RouteTableId, TripTableId, Segment#segment.trip_id),
+      maps:update_with(
+        {Route, Segment#segment.from_stop_id, Segment#segment.to_stop_id},
+        fun(SegsForKey) -> SegsForKey ++ [Segment] end,
+        [Segment],
+        SegmentsMap)
+    end,
+    maps:new(),
+    Segments),
+
+  % Aggregate
+  maps:fold(
+    fun({Route, FromStopId, ToStopId} = _Key, SegsForKey, SconnsAcc) ->
+      AvgWaitSecs = 24 * 60 * 60 / length(SegsForKey),
+      AvgTravelSecs = lists:sum(lists:map(fun(Seg) -> Seg#segment.travel_secs end, SegsForKey)) / length(SegsForKey),
+      SconnsAcc ++ [#sconn{
+        from_stop_id = FromStopId,
+        to_stop_id = ToStopId,
+        transit_mode = Route#route.short_name,
+        wait_secs = AvgWaitSecs,
+        travel_secs = AvgTravelSecs
+      }]
+    end,
+    [],
+    SegmentsMap
+  ).
 
 route_of_trip_id(RouteTableId, TripTableId, TripId) ->
   [Trip] = ets:lookup(TripTableId, TripId),
@@ -48,10 +72,22 @@ assemble_test() ->
     to_time = 11200,
     to_stop_id = "stop-B",
     travel_secs = 90,
-    trip_id = <<"trip-id">>
+    trip_id = <<"trip-1">>
+  }),
+  ets:insert(SegmentTableId, #segment{
+    from_time = 11300,
+    from_stop_id = "stop-A",
+    to_time = 11400,
+    to_stop_id = "stop-B",
+    travel_secs = 80,
+    trip_id = <<"trip-2">>
   }),
   ets:insert(TripTableId, #trip{
-    trip_id = <<"trip-id">>,
+    trip_id = <<"trip-1">>,
+    route_id = <<"route-id">>
+  }),
+  ets:insert(TripTableId, #trip{
+    trip_id = <<"trip-2">>,
     route_id = <<"route-id">>
   }),
 
@@ -59,8 +95,8 @@ assemble_test() ->
     from_stop_id = "stop-A",
     to_stop_id = "stop-B",
     transit_mode = <<"route short name">>,
-    wait_secs = 0, % FIXME
-    travel_secs = 90
+    wait_secs = 24*60*60 / 2,
+    travel_secs = 85.0
   }], assemble(RouteTableId, SegmentTableId, TripTableId)).
 
 insert_to_table([Sconn|Rest], TableId) ->

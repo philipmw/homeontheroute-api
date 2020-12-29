@@ -1,7 +1,11 @@
 -module(trip).
 -export([
+  connections_from_stop_with_txfr/3,
+  connections_from_stop_without_txfr/3,
   optimal_trip_between_coords/4,
   optimal_trip_to_stop/2,
+  stops_walkable_from_coords/3,
+  stops_walkable_from_stop/4,
   total_walk_secs/1]).
 
 -include("records/sconn.hrl").
@@ -248,6 +252,7 @@ optimal_trip_to_stop(TripConfig, InitSegs) ->
     ok = disk_log:alog(TripConfig#trip_config.log, {
       optimal_trip_to_stop,
       invoked,
+      {initSegs, InitSegs},
       {transitModeToA, TransitModeToA},
       {stopAID, StopAId},
       {stopZID, TripConfig#trip_config.stopZid},

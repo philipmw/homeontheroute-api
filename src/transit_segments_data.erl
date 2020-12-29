@@ -15,10 +15,9 @@ make_table() ->
 
 load_from_file(GtfsBasedir) ->
   StopTimes = load_stop_times_from_file(GtfsBasedir),
-  io:fwrite("Read ~B stop times from file; assembling them into segments~n", [length(StopTimes)]),
+  io:fwrite("Read ~B stop-times from file; assembling them into segments~n", [length(StopTimes)]),
   MapByTripId = partition_by_trip_id(StopTimes),
   parallel_convert_stop_times_to_segments(MapByTripId).
-%%  convert_stop_times_to_segments(StopTimes).
 
 load_stop_times_from_file(GtfsBasedir) ->
   Filename = case application:get_application() of
