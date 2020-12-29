@@ -17,7 +17,7 @@
 %   wait 10, A->B: 3
 %
 % Yellow line:
-%   wait 5, B->C: 3, C->D: 3, D->E: 3, E->F: 3
+%   wait 3, B->C: 3, C->D: 3, D->E: 3, E->F: 3
 %
 % Green line:
 %   wait 3, C->F: 3
@@ -80,25 +80,25 @@
   from_stop_id=stopB,
   to_stop_id=stopC,
   transit_mode=routeYellow,
-  wait_secs=60*5,
+  wait_secs=60*3,
   travel_secs=60*3}).
 -define(TEST_SCONN_YELLOW_C_D, #sconn{
   from_stop_id=stopC,
   to_stop_id=stopD,
   transit_mode=routeYellow,
-  wait_secs=60*5,
+  wait_secs=60*3,
   travel_secs=60*3}).
 -define(TEST_SCONN_YELLOW_D_E, #sconn{
   from_stop_id=stopD,
   to_stop_id=stopE,
   transit_mode=routeYellow,
-  wait_secs=60*5,
+  wait_secs=60*3,
   travel_secs=60*3}).
 -define(TEST_SCONN_YELLOW_E_F, #sconn{
   from_stop_id=stopE,
   to_stop_id=stopF,
   transit_mode=routeYellow,
-  wait_secs=60*5,
+  wait_secs=60*3,
   travel_secs=60*3}).
 
 % Green line
