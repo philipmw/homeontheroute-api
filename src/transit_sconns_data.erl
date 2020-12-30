@@ -29,7 +29,7 @@ assemble(RouteTableId, SegmentTableId, TripTableId) ->
       Route = route_of_trip_id(RouteTableId, TripTableId, Segment#segment.trip_id),
       maps:update_with(
         {Route, Segment#segment.from_stop_id, Segment#segment.to_stop_id},
-        fun(SegsForKey) -> SegsForKey ++ [Segment] end,
+        fun(SegsForKey) -> [Segment] ++ SegsForKey end,
         [Segment],
         SegmentsMap)
     end,
@@ -41,13 +41,13 @@ assemble(RouteTableId, SegmentTableId, TripTableId) ->
     fun({Route, FromStopId, ToStopId} = _Key, SegsForKey, SconnsAcc) ->
       AvgWaitSecs = 24 * 60 * 60 / length(SegsForKey),
       AvgTravelSecs = lists:sum(lists:map(fun(Seg) -> Seg#segment.travel_secs end, SegsForKey)) / length(SegsForKey),
-      SconnsAcc ++ [#sconn{
+      [#sconn{
         from_stop_id = FromStopId,
         to_stop_id = ToStopId,
         transit_mode = Route#route.short_name,
         wait_secs = AvgWaitSecs,
         travel_secs = AvgTravelSecs
-      }]
+      }] ++ SconnsAcc
     end,
     [],
     SegmentsMap

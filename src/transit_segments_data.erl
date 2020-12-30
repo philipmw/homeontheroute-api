@@ -84,7 +84,7 @@ convert_stop_times_to_segments([StopTime0|StopTimesTL]) ->
         % we can form a new segment
 %%        io:fwrite("Making a new segment for trip ID ~s, stops ~s -> ~s~n",
 %%          [StopTime#stop_time.trip_id, PrevStopTime#stop_time.stop_id, StopTime#stop_time.stop_id]),
-        {ok, StopTime, Segments ++ [#segment{
+        {ok, StopTime, [#segment{
           from_time = PrevStopTime#stop_time.dep_time,
           from_stop_id = PrevStopTime#stop_time.stop_id,
           from_stop_seq = PrevStopTime#stop_time.stop_seq,
@@ -93,7 +93,7 @@ convert_stop_times_to_segments([StopTime0|StopTimesTL]) ->
           to_stop_seq = StopTime#stop_time.stop_seq,
           trip_id = StopTime#stop_time.trip_id,
           travel_secs = StopTime#stop_time.arr_time - PrevStopTime#stop_time.dep_time
-        }]};
+        }] ++ Segments};
         PrevStopTime#stop_time.trip_id /= StopTime#stop_time.trip_id ->
           % the trip ID changed; we'll make a new segment next time
           {ok, StopTime, Segments};
@@ -109,14 +109,14 @@ convert_stop_times_to_segments([StopTime0|StopTimesTL]) ->
 convert_stop_times_to_segments_good_test() ->
   ?assertEqual([
     #segment{
-      from_time = 32400,
-      from_stop_id = "stop-A",
+      from_time = 28800,
+      from_stop_id = "stop-F",
       from_stop_seq = 1,
-      to_time = 32500,
-      to_stop_id = "stop-B",
-      to_stop_seq = 10,
-      trip_id = <<"1">>,
-      travel_secs = 100
+      to_time = 28880,
+      to_stop_id = "stop-G",
+      to_stop_seq = 2,
+      trip_id = <<"2">>,
+      travel_secs = 80
     },
     #segment{
       from_time = 32500,
@@ -129,14 +129,14 @@ convert_stop_times_to_segments_good_test() ->
       travel_secs = 200
     },
     #segment{
-      from_time = 28800,
-      from_stop_id = "stop-F",
+      from_time = 32400,
+      from_stop_id = "stop-A",
       from_stop_seq = 1,
-      to_time = 28880,
-      to_stop_id = "stop-G",
-      to_stop_seq = 2,
-      trip_id = <<"2">>,
-      travel_secs = 80
+      to_time = 32500,
+      to_stop_id = "stop-B",
+      to_stop_seq = 10,
+      trip_id = <<"1">>,
+      travel_secs = 100
     }
   ], convert_stop_times_to_segments([
     #stop_time{
@@ -212,22 +212,22 @@ parallel_convert_stop_times_to_segments_test() ->
       travel_secs = 100
     },
     #segment{
-      from_time = 100,
-      from_stop_id = "stop-C",
-      from_stop_seq = 1,
-      to_time = 200,
-      to_stop_id = "stop-D",
-      to_stop_seq = 2,
-      trip_id = <<"trip-2">>,
-      travel_secs = 100
-    },
-    #segment{
       from_time = 300,
       from_stop_id = "stop-D",
       from_stop_seq = 2,
       to_time = 400,
       to_stop_id = "stop-E",
       to_stop_seq = 3,
+      trip_id = <<"trip-2">>,
+      travel_secs = 100
+    },
+    #segment{
+      from_time = 100,
+      from_stop_id = "stop-C",
+      from_stop_seq = 1,
+      to_time = 200,
+      to_stop_id = "stop-D",
+      to_stop_seq = 2,
       trip_id = <<"trip-2">>,
       travel_secs = 100
     }
