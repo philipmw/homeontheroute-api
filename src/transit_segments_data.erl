@@ -196,7 +196,7 @@ convert_stop_times_to_segments_bad_seq_test() ->
 
 parallel_convert_stop_times_to_segments(MapByTripId) ->
   lists:flatten(
-    parallel:parmap(fun convert_stop_times_to_segments/1, maps:values(MapByTripId))
+    parallel:parmap_all(fun convert_stop_times_to_segments/1, maps:values(MapByTripId))
   ).
 
 parallel_convert_stop_times_to_segments_test() ->

@@ -293,7 +293,7 @@ optimal_trip_to_stop(TripConfig, InitSegs) ->
       true ->
         []
     end,
-  TripResultsRidingThruStopB = lists:map(fun(SConn) ->
+  TripResultsRidingThruStopB = parallel:parmap_first(fun(SConn) ->
     optimal_trip_to_stop(
       TripConfig,
       [{
@@ -308,7 +308,7 @@ optimal_trip_to_stop(TripConfig, InitSegs) ->
   StopsWalkableFromStop =
     if CanTransfer -> stops_walkable_from_stop(StopsTab, StopAId, sets:add_element(StopAId, StopIdsVisited), MaxWalkSecsAllowed);
       true -> [] end,
-  TripResultsWalkingToStopB = parallel:parmap(
+  TripResultsWalkingToStopB = parallel:parmap_first(
     fun({StopB, DistanceAB}) ->
       optimal_trip_to_stop(
         TripConfig,
