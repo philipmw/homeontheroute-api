@@ -213,9 +213,8 @@ segs_transit_mode_changes_test() ->
 % X-Y-Z is shorter than X-Z directly.  That is impossible.
 segs_walking_is_reasonable([]) -> true;
 segs_walking_is_reasonable([_]) -> true;
-segs_walking_is_reasonable([_, _]) -> true;
-segs_walking_is_reasonable(L) ->
-  [{_, TM1, _, _}, {_, TM2, _, _}] = lists:sublist(L, 2),
+segs_walking_is_reasonable([S1, S2|_]) ->
+  [{_, TM1, _, _}, {_, TM2, _, _}] = [S1, S2],
   TM1 /= walk orelse TM2 /= walk.
 
 segs_walking_is_reasonable_1_test() ->
@@ -394,7 +393,7 @@ trip_test_optimal_trip_to_stop_AB(Tabs) ->
         {0, walk, WalkSecs, stopB},
         {0, walk, 0, stopA}
   ],
-      fnInstQty = 101
+      fnInstQty = 69
     } when WalkSecs > 60*7 andalso WalkSecs < 60*9,
       optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopB, totalTMChangesAllowed = 5},
@@ -404,15 +403,13 @@ trip_test_optimal_trip_to_stop_AD(Tabs) ->
   ?assertMatch(
     #trip_result{
       optimalTrip = [
-        % too tired to walk the whole way, so we'll catch the Yellow Line two stops
         {0, routeYellow, 60*3, stopD},
         {60*3, routeYellow, 60*3, stopC},
-        {0, walk, WalkSecs, stopB},
+        {60*10, routeRed,60*4, stopB},
         {0, walk, 0, stopA}
       ],
-      fnInstQty = 101
-    } when WalkSecs > 60*7 andalso WalkSecs < 60*9,
-      optimal_trip_to_stop(
+      fnInstQty = 69
+    }, optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopD, totalTMChangesAllowed = 5},
         [{0, walk, 0, stopA}])).
 
@@ -422,31 +419,28 @@ trip_test_optimal_trip_to_stop_AF(Tabs) ->
       optimalTrip = [
         {60*3, routeGreen, 60*3, stopF},
         {60*3, routeYellow, 60*3, stopC},
-        {0, walk, WalkSecs, stopB},
+        {60*10, routeRed, 60*4, stopB},
         {0, walk, 0, stopA}
       ],
-      fnInstQty = 101
-    } when WalkSecs > 60*7 andalso WalkSecs < 60*9,
-      optimal_trip_to_stop(
+      fnInstQty = 69
+    }, optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopF, totalTMChangesAllowed = 5},
         [{0, walk, 0, stopA}])).
 
-trip_test_optimal_trip_to_stop_AZ(Tabs) ->
+trip_test_optimal_trip_to_stop_BZ(Tabs) ->
   ?assertMatch(
     #trip_result{
       optimalTrip = [
         {0, walk, WalkSecsFZ, stopZ},
         {60*3, routeGreen, 60*3, stopF},
         {60*3, routeYellow, 60*3, stopC},
-        {0, walk, WalkSecsAB, stopB},
-        {0, walk, 0, stopA}
+        {0, walk, 0, stopB}
       ],
-      fnInstQty = 99
-    } when WalkSecsAB > 60*7 andalso WalkSecsAB < 60*9 andalso
-      WalkSecsFZ > 60*60 andalso WalkSecsFZ < 60*61,
+      fnInstQty = 41
+    } when WalkSecsFZ > 60*60 andalso WalkSecsFZ < 60*61,
       optimal_trip_to_stop(
         #trip_config{tabs = Tabs, stopZid = stopZ, totalSecsAllowed = 10000, totalTMChangesAllowed = 10},
-        [{0, walk, 0, stopA}])).
+        [{0, walk, 0, stopB}])).
 
 trip_test_optimal_trip_to_stop_AZ_limitedModeChg(Tabs) ->
   ?assertMatch(
@@ -464,7 +458,7 @@ trip_test_optimal_trip_to_stop_AZ_limitedModeChg(Tabs) ->
     } when WalkSecsAB > 60*7 andalso WalkSecsAB < 60*9 andalso
       WalkSecsFZ > 60*60 andalso WalkSecsFZ < 60*61,
       optimal_trip_to_stop(
-        #trip_config{tabs = Tabs, stopZid = stopZ, totalSecsAllowed = 10000, totalTMChangesAllowed = 1},
+        #trip_config{tabs = Tabs, stopZid = stopZ, totalSecsAllowed = 10000, totalTMChangesAllowed = 2},
         [{0, walk, 0, stopA}])).
 
 trip_test_optimal_trip_to_stop_ZA(Tabs) ->
@@ -542,7 +536,7 @@ optimal_trip_between_coords(Tabs, FromCoords, ToCoords, TotalModeChangesAllowed)
 %%  io:fwrite("OptimalTripResults: ~p~n", [OptimalTripResults]),
   min_by(OptimalTripResults, fun total_secs_of_trip_result/1).
 
-trip_test_optimal_trip_between_coords(Tabs) ->
+trip_test_optimal_trip_between_coords_AB_EF(Tabs) ->
   FromCoords = #coords{lat=47.001, lon=-122}, % stop A is closer than stop B
   ToCoords = #coords{lat=47.023, lon=-122},
   TripResult = optimal_trip_between_coords(Tabs, FromCoords, ToCoords, 4),
@@ -556,7 +550,7 @@ trip_test_optimal_trip_between_coords(Tabs) ->
         {60*3, routeYellow, 60*3, stopC},
         {0, walk, WalkSecsToB, stopB}
       ],
-      fnInstQty = 47
+      fnInstQty = 36
     } when WalkSecsToB > 60*9 andalso WalkSecsToB < 60*10
       andalso WalkSecsFromF > 0 andalso WalkSecsFromF < 60*1,
     TripResult).
@@ -577,11 +571,11 @@ trip_test_() ->
       fun trip_test_optimal_trip_to_stop_AB/1,
       fun trip_test_optimal_trip_to_stop_AD/1,
       fun trip_test_optimal_trip_to_stop_AF/1,
-      fun trip_test_optimal_trip_to_stop_AZ/1,
+      fun trip_test_optimal_trip_to_stop_BZ/1,
       fun trip_test_optimal_trip_to_stop_AZ_limitedModeChg/1,
       fun trip_test_optimal_trip_to_stop_ZA/1,
       fun trip_test_optimal_trip_to_stop_tooMuchWalking/1,
       fun trip_test_stops_walkable_from_stop/1,
-      fun trip_test_optimal_trip_between_coords/1
+      fun trip_test_optimal_trip_between_coords_AB_EF/1
     ]}
   }.
