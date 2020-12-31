@@ -34,5 +34,5 @@ meters_between_stops(StopA, StopB) ->
 
 meters_between_stops_test() ->
   ?assertMatch(
-    Distance when Distance > 667 andalso Distance < 668,
+    Distance when Distance > 480 andalso Distance < 481,
     meters_between_stops(?TEST_STOP_B, ?TEST_STOP_C)).

@@ -1,6 +1,6 @@
 -include("./records/coords.hrl").
--include("./records/stop.hrl").
 -include("./records/sconn.hrl").
+-include("./records/stop.hrl").
 
 % Stop connectivity:
 %
@@ -36,36 +36,39 @@
 % Test walk start: (47, -122).  From this, stops A and B are
 % reachable by walking.
 
+-define(GRID_LAT_START, 47.001).
+-define(LAT_PER_WALK_MIN, 0.00054).
+
 -define(TEST_STOP_A, #stop{
   id=stopA, name = <<"Stop A">>,
-  coords=#coords{lat=47.001, lon=-122}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 1, lon=-122}}).
 -define(TEST_STOP_B, #stop{
   id=stopB, name = <<"Stop B">>,
-  coords=#coords{lat=47.007, lon=-122.0001}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 9, lon=-122.0001}}).
 -define(TEST_STOP_C, #stop{
   id=stopC, name = <<"Stop C">>,
-  coords=#coords{lat=47.013, lon=-122}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 17, lon=-122}}).
 -define(TEST_STOP_D, #stop{
   id=stopD, name = <<"Stop D">>,
-  coords=#coords{lat=47.019, lon=-122.0001}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 25, lon=-122.0001}}).
 -define(TEST_STOP_E, #stop{
   id=stopE, name = <<"Stop E">>,
-  coords=#coords{lat=47.025, lon=-122}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 33, lon=-122}}).
 -define(TEST_STOP_F, #stop{
   id=stopF, name = <<"Stop F">>,
-  coords=#coords{lat=47.031, lon=-122.0001}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 41, lon=-122.0001}}).
 -define(TEST_STOP_G, #stop{
   id=stopG, name = <<"Stop G">>,
-  coords=#coords{lat=47.025, lon=-122.02}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 33, lon=-122.02}}).
 -define(TEST_STOP_H, #stop{
   id=stopH, name = <<"Stop H">>,
-  coords=#coords{lat=47.016, lon=-122.0201}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 20, lon=-122.0201}}).
 -define(TEST_STOP_I, #stop{
   id=stopI, name = <<"Stop I">>,
-  coords=#coords{lat=47.010, lon=-122.02}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 12, lon=-122.02}}).
 -define(TEST_STOP_Z, #stop{
   id=stopZ, name = <<"Stop Z">>,
-  coords=#coords{lat=47.077, lon=-122}}).
+  coords=#coords{lat=?GRID_LAT_START + ?LAT_PER_WALK_MIN * 101, lon=-122}}).
 
 % Red line
 -define(TEST_SCONN_RED_A_B, #sconn{

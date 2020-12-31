@@ -5,7 +5,6 @@
 % Max walking over the entire trip, not necessarily contiguously.
 -define(MAX_WALK_SECS_TOTAL, 60*20).
 
--define(MAX_TRANSFERS, 2).
-
 % https://en.wikipedia.org/wiki/Preferred_walking_speed
--define(WALK_METERS_PER_SEC, 1.4).
+% moderated for intersections, stop lights, hills, etc.
+-define(WALK_METERS_PER_SEC, 1.0).

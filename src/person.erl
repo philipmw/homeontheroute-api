@@ -13,6 +13,6 @@ direct_walk_secs(StopA, StopB) ->
 
 direct_walk_secs_test() ->
   ?assertMatch(
-    Secs when Secs > 60*7 andalso Secs < 60*8,
+    Secs when Secs > 60*7 andalso Secs < 60*9,
       direct_walk_secs(?TEST_STOP_B, ?TEST_STOP_C)).
 
