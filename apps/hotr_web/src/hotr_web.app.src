@@ -1,18 +1,19 @@
-{application, homeontheroute,
-  [{description, "Home On The Route, the API for homeontheroute.com"},
+{application, hotr_web,
+  [{description, "Home On The Route web service"},
     {vsn, "0.0.1"},
     {registered, []},
-    {mod, {homeontheroute_app, []}},
+    {mod, {hotr_web_app, []}},
     {applications,
       [kernel,
         stdlib,
         sasl,
         jsone,
-        cowboy
+        cowboy,
+        hotr_gtfs
       ]},
     {env, []},
     {modules, [
-      homeontheroute_sup
+      hotr_web_sup
     ]},
 
     {maintainers, []},

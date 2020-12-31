@@ -7,7 +7,7 @@
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("gtfs.hrl").
+
 -include("records/sconn.hrl").
 -include("test_data.hrl").
 
@@ -23,7 +23,7 @@ create_all_ets() ->
 create_stops_ets() ->
   io:fwrite("Creating Stops table~n"),
   TableId = transit_stops_data:make_table(),
-  Stops = transit_stops_data:load_from_file(?GTFS_BASEDIR),
+  Stops = transit_stops_data:load_from_file(gtfs:filename_for(stops)),
   io:fwrite("Read ~B stops from file~n", [lists:flatlength(Stops)]),
   ok = transit_stops_data:insert_to_table(Stops, TableId),
   io:fwrite("Loaded stops into ETS table ID ~w~n", [TableId]),
@@ -32,7 +32,7 @@ create_stops_ets() ->
 create_routes_ets() ->
   io:fwrite("Creating Routes table~n"),
   TableId = transit_routes_data:make_table(),
-  Routes = transit_routes_data:load_from_file(?GTFS_BASEDIR),
+  Routes = transit_routes_data:load_from_file(gtfs:filename_for(routes)),
   io:fwrite("Read ~B routes from file~n", [lists:flatlength(Routes)]),
   ok = transit_routes_data:insert_to_table(Routes, TableId),
   io:fwrite("Loaded routes into ETS table ID ~w~n", [TableId]),
@@ -41,7 +41,7 @@ create_routes_ets() ->
 create_trips_ets() ->
   io:fwrite("Creating Trips table~n"),
   TableId = transit_trips_data:make_table(),
-  Trips = transit_trips_data:load_from_file(?GTFS_BASEDIR),
+  Trips = transit_trips_data:load_from_file(gtfs:filename_for(trips)),
   io:fwrite("Read ~B trips from file~n", [lists:flatlength(Trips)]),
   ok = transit_trips_data:insert_to_table(Trips, TableId),
   io:fwrite("Loaded trips into ETS table ID ~w~n", [TableId]),
@@ -50,7 +50,7 @@ create_trips_ets() ->
 create_segments_ets() ->
   io:fwrite("Creating Segments table~n"),
   TableId = transit_segments_data:make_table(),
-  Segments = transit_segments_data:load_from_file(?GTFS_BASEDIR),
+  Segments = transit_segments_data:load_from_file(gtfs:filename_for(stop_times)),
   io:fwrite("Assembled ~B transit segments~n", [lists:flatlength(Segments)]),
   ok = transit_segments_data:insert_to_table(Segments, TableId),
   io:fwrite("Loaded transit segments into ETS table ID ~w~n", [TableId]),

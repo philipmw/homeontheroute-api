@@ -1,4 +1,4 @@
--module(homeontheroute_sup).
+-module(hotr_web_sup).
 
 -behaviour(supervisor).
 

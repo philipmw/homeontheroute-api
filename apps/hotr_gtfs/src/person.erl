@@ -3,9 +3,10 @@
   direct_walk_secs/2
 ]).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -include("person.hrl").
 -include("test_data.hrl").
--include_lib("eunit/include/eunit.hrl").
 
 direct_walk_secs(StopA, StopB) ->
   Meters = earth:meters_between_stops(StopA, StopB),

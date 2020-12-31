@@ -6,24 +6,19 @@
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("gtfs.hrl").
 -include("records/trip.hrl").
 
 make_table() ->
   ets:new(trips, [{keypos, #trip.trip_id}]).
 
-load_from_file(GtfsBasedir) ->
-  Filename = case application:get_application() of
-               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/trips.txt";
-               _ -> "./priv/" ++ GtfsBasedir ++ "/trips.txt"
-             end,
+load_from_file(Filename) ->
   io:fwrite("Loading trips from ~s~n", [Filename]),
   {ok, DataBinary} = file:read_file(Filename),
   DataBinaryList = binary:split(DataBinary, <<$\n>>, [global]),
   [fileline_to_trip(B) || B <- select_good_lines(DataBinaryList)].
 
 load_from_file_test() ->
-  Trips = load_from_file(?GTFS_BASEDIR),
+  Trips = load_from_file(gtfs:filename_for(trips)),
   [Trip|_] = Trips,
   ?assertEqual(Trip, #trip{
     trip_id = <<"34745815">>,

@@ -6,8 +6,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include("earth.hrl").
--include("records/stop.hrl").
 -include("test_data.hrl").
+-include("records/stop.hrl").
 
 -spec deg_to_rad(number()) -> float().
 deg_to_rad(D) ->

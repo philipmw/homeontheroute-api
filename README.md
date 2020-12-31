@@ -6,46 +6,16 @@ Home On The Route offers _personalized_ Transit Scores for your area.  [The Trou
 
 ## Project status
 
-The project currently is not functional.
+The project is currently a work in progress and is not ready for use.
 It is in intermittent development in my free time, as a hobby project.
-
-## API
-
-### Get a list of all stops
-
-*`GET /stops`*
-
-Takes no query params.  Returns JSON: a list of transit stops.
-
-### Get transit score pins
-
-(_Not implemented yet._)
-
-*`GET /transitscore-pins`*
-
-Query params:
-
-* `userLocations[]`: a list of coordinates of the user's favorite locations
-* `radiusMeters`: radius, in meters, of each data bin.  This is intended to be synced with the `radius` parameter to `Microsoft.Maps.DataBinningLayer`.
-* `originCoords`: coordinates of the bounding box's (0, 0) point
-* `bbWidthMeters`: the bounding box's width, in meters
-* `bbHeightMeters`: the bounding box's height, in meters
-
-Returns [GeoJSON](http://geojson.org/) of pins, within the specified bounding box, spaced _<radius>_ meters apart, each having a `transit-score` metadata property.
 
 ## Development
 
 ### Architecture
 
-                    [Application supervisor]
-                                |
-               /                |
-              v                 v
-    [Visitor counter]      [Webserver]
-                                |
-                                |
-                                v
-                             [Cowboy]
+There are two Erlang applications here: `hotr_gtfs` and `hotr_web`.
+The GTFS application has stateless logic for processing GTFS data,
+while the Web application is an OTP server for processing web requests.
 
 ### Add GTFS data
 
@@ -53,19 +23,6 @@ This application needs GTFS data.  (Tested only with King County Metro's dataset
 Because GTFS data is large, I don't include it in the source repository, so download it yourself.
 The latest King County Metro GTFS dataset is downloaded as part of this project's continuous deployment,
 so refer to `./.circleci/config.yml` for the details.
-
-### Data structures
-
-| ID   | Name                  | Latitude | Longitude |
-| ---: | :-------------------- | -------: | --------: |
-| 1000 | Pine St & 9th Ave     | 47.613   | -122.332  |
-| 3200 | E Union St & 20th Ave | 47.613   | -122.306  |
-[Stops (records/stops.hrl)]
-
-| From Stop Id | To Stop Id | Transit Mode | Wait Mins | Travel Mins |
-| -----------: | ---------: | :----------- | --------: | ----------: |
-| 1000         | 3200       | route 28     | 4         | 20          |
-[Direct connections between stops (records/sconn.hrl)]
 
 ### Install development software
 
@@ -100,7 +57,8 @@ As needed:
 
 And look for this output:
 
-    ===> Booted homeontheroute
+    ===> Booted hotr_gtfs
+    ===> Booted hotr_web
 
 If it fails to start: did you add your own GTFS data?
 

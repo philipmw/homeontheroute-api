@@ -6,25 +6,20 @@
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("gtfs.hrl").
 -include("records/coords.hrl").
 -include("records/stop.hrl").
 
 make_table() ->
   ets:new(stops, [{keypos, #stop.id}]).
 
-load_from_file(GtfsBasedir) ->
-  Filename = case application:get_application() of
-               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stops.txt";
-               _ -> "./priv/" ++ GtfsBasedir ++ "/stops.txt"
-             end,
+load_from_file(Filename) ->
   io:fwrite("Loading stops from ~s~n", [Filename]),
   {ok, DataBinary} = file:read_file(Filename),
   DataBinaryList = binary:split(DataBinary, <<$\n>>, [global]),
   [fileline_to_stop(B) || B <- select_good_lines(DataBinaryList)].
 
 load_from_file_test() ->
-  Stops = load_from_file(?GTFS_BASEDIR),
+  Stops = load_from_file(gtfs:filename_for(stops)),
   [Stop|_] = Stops,
   ?assertEqual(Stop, #stop{
     id = <<"1000">>,

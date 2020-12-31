@@ -6,24 +6,19 @@
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("gtfs.hrl").
 -include("records/route.hrl").
 
 make_table() ->
   ets:new(routes, [{keypos, #route.id}]).
 
-load_from_file(GtfsBasedir) ->
-  Filename = case application:get_application() of
-               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/routes.txt";
-               _ -> "./priv/" ++ GtfsBasedir ++ "/routes.txt"
-             end,
+load_from_file(Filename) ->
   io:fwrite("Loading routes from ~s~n", [Filename]),
   {ok, DataBinary} = file:read_file(Filename),
   DataBinaryList = binary:split(DataBinary, <<$\n>>, [global]),
   [fileline_to_route(B) || B <- select_good_lines(DataBinaryList)].
 
 load_from_file_test() ->
-  Routes = load_from_file(?GTFS_BASEDIR),
+  Routes = load_from_file(gtfs:filename_for(routes)),
   [Route|_] = Routes,
   ?assertEqual(Route, #route{
     id = <<"100001">>,

@@ -6,31 +6,26 @@
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("gtfs.hrl").
 -include("records/segment.hrl").
 -include("records/stop_time.hrl").
 
 make_table() ->
   ets:new(segments, [bag, {keypos, #segment.from_stop_id}]).
 
-load_from_file(GtfsBasedir) ->
-  StopTimes = load_stop_times_from_file(GtfsBasedir),
+load_from_file(Filename) ->
+  StopTimes = load_stop_times_from_file(Filename),
   io:fwrite("Read ~B stop-times from file; assembling them into segments~n", [length(StopTimes)]),
   MapByTripId = partition_by_trip_id(StopTimes),
   parallel_convert_stop_times_to_segments(MapByTripId).
 
-load_stop_times_from_file(GtfsBasedir) ->
-  Filename = case application:get_application() of
-               {ok, AppName} -> code:priv_dir(AppName) ++ "/" ++ GtfsBasedir ++ "/stop_times.txt";
-               _ -> "./priv/" ++ GtfsBasedir ++ "/stop_times.txt"
-             end,
+load_stop_times_from_file(Filename) ->
   io:fwrite("Loading stop times from ~s~n", [Filename]),
   {ok, DataBinary} = file:read_file(Filename),
   DataBinaryList = binary:split(DataBinary, <<$\n>>, [global]),
   [fileline_to_stop_time(B) || B <- select_good_lines(DataBinaryList)].
 
 load_stop_times_from_file_test() ->
-  Segments = load_stop_times_from_file(?GTFS_BASEDIR),
+  Segments = load_stop_times_from_file(gtfs:filename_for(stop_times)),
   [Segment|_] = Segments,
   ?assertEqual(Segment, #stop_time{
     trip_id = <<"34745815">>,

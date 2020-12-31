@@ -9,11 +9,12 @@
   stops_walkable_from_stop/4,
   total_walk_secs/1]).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -include("records/sconn.hrl").
 -include("records/stop.hrl").
 -include("person.hrl").
 -include("test_data.hrl").
--include_lib("eunit/include/eunit.hrl").
 
 -record(trip_config, {
   tabs,

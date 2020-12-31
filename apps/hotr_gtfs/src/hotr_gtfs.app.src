@@ -1,0 +1,17 @@
+{application, hotr_gtfs,
+  [{description, "Home On The Route GTFS component"},
+    {vsn, "0.0.1"},
+    {registered, []},
+    {applications,
+      [kernel,
+        stdlib
+      ]},
+    {env, []},
+    {modules, [
+      transit_data
+    ]},
+
+    {maintainers, []},
+    {licenses, []},
+    {links, []}
+  ]}.
