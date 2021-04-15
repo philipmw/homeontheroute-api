@@ -10,7 +10,7 @@
 -include("records/stop_time.hrl").
 
 make_table() ->
-  ets:new(segments, [bag, {keypos, #segment.from_stop_id}]).
+  ets:new(segments, [bag, {read_concurrency, true}, {keypos, #segment.from_stop_id}]).
 
 load_from_file(Filename) ->
   StopTimes = load_stop_times_from_file(Filename),

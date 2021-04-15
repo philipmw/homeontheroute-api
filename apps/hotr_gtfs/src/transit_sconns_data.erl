@@ -13,7 +13,7 @@
 -include("records/trip.hrl").
 
 make_table() ->
-  ets:new(sconns, [bag, {keypos, #sconn.from_stop_id}]).
+  ets:new(sconns, [bag, {read_concurrency, true}, {keypos, #sconn.from_stop_id}]).
 
 assemble(RouteTableId, SegmentTableId, TripTableId) ->
   Segments = ets:select(SegmentTableId, [{'_', [], ['$_']}]),

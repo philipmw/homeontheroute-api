@@ -12,7 +12,9 @@
 -include("test_data.hrl").
 
 create_all_ets() ->
-  TopTableId = ets:new(transit_data_top, [named_table]),
+  TopTableId = ets:new(transit_data_top, [
+    named_table,
+    {read_concurrency, true}]),
   ets:insert(TopTableId, {stops, create_stops_ets()}),
   ets:insert(TopTableId, {routes, create_routes_ets()}),
   ets:insert(TopTableId, {trips, create_trips_ets()}),

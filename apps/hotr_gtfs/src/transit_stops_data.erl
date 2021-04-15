@@ -10,7 +10,7 @@
 -include("records/stop.hrl").
 
 make_table() ->
-  ets:new(stops, [{keypos, #stop.id}]).
+  ets:new(stops, [{read_concurrency, true}, {keypos, #stop.id}]).
 
 load_from_file(Filename) ->
   io:fwrite("Loading stops from ~s~n", [Filename]),

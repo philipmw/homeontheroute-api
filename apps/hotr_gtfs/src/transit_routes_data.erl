@@ -9,7 +9,7 @@
 -include("records/route.hrl").
 
 make_table() ->
-  ets:new(routes, [{keypos, #route.id}]).
+  ets:new(routes, [{read_concurrency, true}, {keypos, #route.id}]).
 
 load_from_file(Filename) ->
   io:fwrite("Loading routes from ~s~n", [Filename]),

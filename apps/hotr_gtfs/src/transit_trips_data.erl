@@ -9,7 +9,7 @@
 -include("records/trip.hrl").
 
 make_table() ->
-  ets:new(trips, [{keypos, #trip.trip_id}]).
+  ets:new(trips, [{read_concurrency, true}, {keypos, #trip.trip_id}]).
 
 load_from_file(Filename) ->
   io:fwrite("Loading trips from ~s~n", [Filename]),
