@@ -13,21 +13,9 @@
 
 -include("records/sconn.hrl").
 -include("records/stop.hrl").
+-include("records/trip.hrl").
 -include("person.hrl").
 -include("test_data.hrl").
-
--record(trip_config, {
-  tabs,
-  log,
-  stopZid,
-  totalSecsAllowed,
-  totalTransfersAllowed
-}).
-
--record(trip_result, {
-  optimalTrip,
-  fnInstQty
-}).
 
 min_by(List, Fun) ->
   [Head|_Rest] = List,
