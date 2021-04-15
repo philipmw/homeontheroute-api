@@ -7,6 +7,7 @@
   segs_total_secs/1,
   stops_walkable_from_coords/3,
   stops_walkable_from_stop/4,
+  total_secs_of_trip_result/1,
   total_walk_secs/1]).
 
 -include_lib("eunit/include/eunit.hrl").

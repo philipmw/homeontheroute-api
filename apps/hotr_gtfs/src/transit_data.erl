@@ -3,7 +3,8 @@
 -export([
   create_all_ets/0,
   ets_map/2,
-  stop/2
+  stop/2,
+  stops_list/1
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -20,7 +21,13 @@ create_all_ets() ->
   ets:insert(TopTableId, {trips, create_trips_ets()}),
   ets:insert(TopTableId, {segments, create_segments_ets()}),
   ets:insert(TopTableId, {sconns, create_sconns_ets(TopTableId)}),
+  ets:insert(TopTableId, {optimal_trips, create_optimal_trips_ets()}),
   TopTableId.
+
+create_optimal_trips_ets() ->
+  io:fwrite("Creating Optimal Trips table~n"),
+  TableId = transit_optimal_trips_data:table_from_file(),
+  TableId.
 
 create_stops_ets() ->
   io:fwrite("Creating Stops table~n"),
@@ -85,12 +92,15 @@ transit_data_test_ets_map(Tabs) ->
   Mapped = ets_map(StopsTab, fun(_X) -> 1 end),
   ?assertEqual(10, lists:sum(Mapped)).
 
+stops_list(StopsTab) -> ets:tab2list(StopsTab).
+
 % Map stop IDs to stop records.  This assumes that the ETS table is a set!
 stop(StopsTab, StopIds) ->
   lists:map(
     fun(StopId) -> lists:nth(1, ets:lookup(StopsTab, StopId)) end,
     StopIds
   ).
+
 
 -spec sconns_between(ets:tid(), _, _) -> [sconn()].
 sconns_between(SConnsTab, StopAId, StopBId) ->
