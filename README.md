@@ -20,7 +20,9 @@ while the Web application is an OTP server for processing web requests.
 ### Add GTFS data
 
 This application needs GTFS data.  (Tested only with King County Metro's datasets.)
-Because GTFS data is large, I don't include it in the source repository, so download it yourself.
+Because GTFS data is large, I don't include it in the source repository, so download it yourself:
+https://www.kingcounty.gov/depts/transportation/metro/travel-options/bus/app-center/developer-resources.aspx
+
 The latest King County Metro GTFS dataset is downloaded as part of this project's continuous deployment,
 so refer to `./.circleci/config.yml` for the details.
 
