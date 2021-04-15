@@ -1,0 +1,3 @@
+-ifndef(GTFS_BASEDIR).
+-define(GTFS_BASEDIR, "metro-gtfs").
+-endif.

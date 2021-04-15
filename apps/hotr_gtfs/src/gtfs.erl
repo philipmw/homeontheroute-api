@@ -2,9 +2,8 @@
 
 -export([filename_for/1]).
 
--ifndef(GTFS_BASEDIR).
--define(GTFS_BASEDIR, "metro-gtfs").
--endif.
+-include("gtfs.hrl").
+
 
 filename_for(Type) ->
 %%  case application:get_application() of
