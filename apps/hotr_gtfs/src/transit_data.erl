@@ -28,7 +28,7 @@ create_stops_ets() ->
   Stops = transit_stops_data:load_from_file(gtfs:filename_for(stops)),
   io:fwrite("Read ~B stops from file~n", [lists:flatlength(Stops)]),
   ok = transit_stops_data:insert_to_table(Stops, TableId),
-  io:fwrite("Loaded stops into ETS table ID ~w~n", [TableId]),
+  io:fwrite("Loaded ~B stops into ETS table ID ~w~n", [ets:info(TableId, size), TableId]),
   TableId.
 
 create_routes_ets() ->
@@ -37,7 +37,7 @@ create_routes_ets() ->
   Routes = transit_routes_data:load_from_file(gtfs:filename_for(routes)),
   io:fwrite("Read ~B routes from file~n", [lists:flatlength(Routes)]),
   ok = transit_routes_data:insert_to_table(Routes, TableId),
-  io:fwrite("Loaded routes into ETS table ID ~w~n", [TableId]),
+  io:fwrite("Loaded ~B routes into ETS table ID ~w~n", [ets:info(TableId, size), TableId]),
   TableId.
 
 create_trips_ets() ->
@@ -46,7 +46,7 @@ create_trips_ets() ->
   Trips = transit_trips_data:load_from_file(gtfs:filename_for(trips)),
   io:fwrite("Read ~B trips from file~n", [lists:flatlength(Trips)]),
   ok = transit_trips_data:insert_to_table(Trips, TableId),
-  io:fwrite("Loaded trips into ETS table ID ~w~n", [TableId]),
+  io:fwrite("Loaded ~B trips into ETS table ID ~w~n", [ets:info(TableId, size), TableId]),
   TableId.
 
 create_segments_ets() ->
@@ -54,8 +54,8 @@ create_segments_ets() ->
   TableId = transit_segments_data:make_table(),
   Segments = transit_segments_data:load_from_file(gtfs:filename_for(stop_times)),
   io:fwrite("Assembled ~B transit segments~n", [lists:flatlength(Segments)]),
-  ok = transit_segments_data:insert_to_table(Segments, TableId),
-  io:fwrite("Loaded transit segments into ETS table ID ~w~n", [TableId]),
+  ok = transit_segments_data:insert_to_table(TableId, Segments),
+  io:fwrite("Loaded ~B transit segments into ETS table ID ~w~n", [ets:info(TableId, size), TableId]),
   TableId.
 
 create_sconns_ets(TopTableId) ->
@@ -67,7 +67,7 @@ create_sconns_ets(TopTableId) ->
   Sconns = transit_sconns_data:assemble(RouteTableId, SegTableId, TripTableId),
   io:fwrite("Assembled ~B sconns~n", [lists:flatlength(Sconns)]),
   ok = transit_sconns_data:insert_to_table(Sconns, TableId),
-  io:fwrite("Loaded sconns into ETS table ID ~w~n", [TableId]),
+  io:fwrite("Loaded ~B sconns into ETS table ID ~w~n", [ets:info(TableId, size), TableId]),
   TableId.
 
 % `ets_map` passes each item from the ETS table to a user-specified function.

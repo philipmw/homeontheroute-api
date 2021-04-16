@@ -237,10 +237,9 @@ parallel_convert_stop_times_to_segments_test() ->
     ]}
   )).
 
-insert_to_table([Segment|Rest], SegmentsTableId) ->
-  true = ets:insert(SegmentsTableId, Segment),
-  insert_to_table(Rest, SegmentsTableId);
-insert_to_table([], _) -> ok.
+insert_to_table(SegmentsTableId, AllSegments) ->
+  true = ets:insert(SegmentsTableId, AllSegments),
+  ok.
 
 select_good_lines(DataBinaryList) ->
   % skip the header
