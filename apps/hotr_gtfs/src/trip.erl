@@ -12,9 +12,9 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-include("records/optimal_trip.hrl").
 -include("records/sconn.hrl").
 -include("records/stop.hrl").
--include("records/trip.hrl").
 -include("person.hrl").
 -include("test_data.hrl").
 

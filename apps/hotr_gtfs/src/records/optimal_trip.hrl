@@ -13,4 +13,17 @@
   compute_secs
 }).
 
+-record(trip_config, {
+  tabs,
+  log,
+  stopZid,
+  totalSecsAllowed,
+  totalTransfersAllowed
+}).
+
+-record(trip_result, {
+  optimalTrip,
+  fnInstQty
+}).
+
 -endif.
