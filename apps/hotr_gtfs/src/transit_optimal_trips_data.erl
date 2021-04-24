@@ -33,10 +33,12 @@ table_from_data(Tabs) ->
       #trip_config{
         tabs = Tabs,
         stopZid = StopZ#stop.id,
-        totalSecsAllowed = 60 * 90,
         totalTransfersAllowed = 3
       },
-      [{0, walk, 0, StopA#stop.id}]
+      #trip_state{
+        remainAllowedSecs = 60 * 90,
+        segs = [{0, walk, 0, StopA#stop.id}]
+      }
     ]),
     OptimalTrip = #optimal_trip{
       trip_ends = TripEnds,
